@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VotingForm</title>
+</head>
+
+<body>
+
+    <p id="ballotName" style="font-size: 28px;">Loading ballot...</p>
+
+    <form id="voteForm">
+
+        <h2 style="font-weight: normal; text-decoration: underline;">Your Vote</h2>
+
+        <label>
+            <input type="radio" name="vote" value="Yes" required>
+            Yes
+        </label>
+
+        <label>
+            <input type="radio" name="vote" value="No">
+            No
+        </label>
+
+        <label>
+            <input type="radio" name="vote" value="Abstain">
+            Abstain
+        </label>
+
+        <h2 style="font-weight: normal; text-decoration: underline;">Comments</h2>
+
+        <textarea
+            id="comment"
+            name="comment"
+            rows="5"
+            cols="50"
+            placeholder="Optional comments"></textarea>
+
+        <br><br>
+
+        <button type="submit">Submit Vote</button>
+
+    </form>
+
+    <p id="message"></p>
+
+    <script src="ballot.js"></script>
+</body>
+</html>
