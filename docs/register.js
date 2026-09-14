@@ -122,7 +122,10 @@ document.getElementById("createAccount").addEventListener("click", async functio
             .eq("sharepoint_id", voterId);
 
     if (voterError) {
-        console.error("Voter update error:", voterError);
+        console.error(
+            "Voter update error:",
+            JSON.stringify(voterError, null, 2)
+        );
         message.textContent =
             "Account created, but voter record could not be updated.";
         return;
