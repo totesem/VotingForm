@@ -33,8 +33,12 @@ async function checkAuthentication() {
     // invitation token and ballot name.
     if (invitationToken && ballotId) {
 
+
+        const voterId = params.get("voter");
+
         window.location.href =
-            `register.html?invite=${encodeURIComponent(invitationToken)}&ballot=${encodeURIComponent(ballotId)}`;
+            `register.html?invite=${encodeURIComponent(invitationToken)}&voter=${encodeURIComponent(voterId)}&ballot=${encodeURIComponent(ballotId)}`;    
+
 
         return;
     }
