@@ -59,6 +59,8 @@ checkInvitation();
 
 document.getElementById("createAccount").addEventListener("click", async function () {
 
+    console.log("CREATE ACCOUNT CLICKED");
+
     const email =
         document.getElementById("email").value.trim();
 
