@@ -47,9 +47,18 @@ async function checkAuthentication() {
 checkAuthentication();
 
 
-document.getElementById("voteForm").addEventListener("submit", function (event) {
+document.getElementById("voteForm").addEventListener("submit", async function (event) {
 
     event.preventDefault();
+
+    const { data: { session } } =
+        await supabaseClient.auth.getSession();
+
+    if (!session) {
+        document.getElementById("message").textContent =
+            "You must register or sign in to vote.";
+        return;
+    }
 
     const selectedVote =
         document.querySelector('input[name="vote"]:checked');
@@ -68,10 +77,10 @@ document.getElementById("voteForm").addEventListener("submit", function (event) 
     console.log({
         ballotId: ballotId,
         vote: vote,
-        comment: comment
+        comment: comment,
+        userId: session.user.id
     });
 
     document.getElementById("message").textContent =
         "Vote recorded successfully!";
-
 });
