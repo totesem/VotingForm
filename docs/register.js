@@ -2,6 +2,7 @@ const params = new URLSearchParams(window.location.search);
 
 const invitationToken = params.get("invite");
 const voterId = params.get("voter");
+const ballotId = params.get("ballot");
 
 const status = document.getElementById("status");
 const registration = document.getElementById("registration");
@@ -22,14 +23,21 @@ async function checkInvitation() {
         return;
     }
 
-    // Find the invitation using BOTH the invitation token
-    // and the voter ID.
-    const { data, error } = await supabaseClient
-        .from("invitations")
-        .select("id, voter_id, ballot_id, used")
-        .eq("invitation_token", invitationToken)
-        .eq("voter_id", voterId)
-        .single();
+    if (!ballotId) {
+        status.textContent = "No ballot specified.";
+        return;
+    }
+
+    // Look up the invitation that Power Automate
+    // registered in Supabase.
+    const { data, error } =
+        await supabaseClient
+            .from("auth_guids")
+            .select("id, guid, voter_id, ballot_id")
+            .eq("guid", invitationToken)
+            .eq("voter_id", voterId)
+            .eq("ballot_id", ballotId)
+            .single();
 
     if (error || !data) {
         console.error("Invitation lookup error:", error);
@@ -37,17 +45,14 @@ async function checkInvitation() {
         return;
     }
 
-    if (data.used) {
-        status.textContent = "This invitation has already been used.";
-        return;
-    }
+    invitation = data;
 
-    // Find the voter
+    // Find the voter record.
     const { data: voter, error: voterError } =
         await supabaseClient
             .from("voters")
             .select("id, roster_email_1, roster_email_2")
-            .eq("id", data.voter_id)
+            .eq("sharepoint_id", voterId)
             .single();
 
     if (voterError || !voter) {
@@ -55,8 +60,6 @@ async function checkInvitation() {
         status.textContent = "Voter record could not be found.";
         return;
     }
-
-    invitation = data;
 
     status.textContent =
         `Invitation for ballot: ${data.ballot_id}`;
@@ -108,6 +111,7 @@ document.getElementById("createAccount").addEventListener("click", async functio
 
     const userId = authData.user.id;
 
+    // Connect the Supabase account to the voter.
     const { error: voterError } =
         await supabaseClient
             .from("voters")
@@ -115,7 +119,7 @@ document.getElementById("createAccount").addEventListener("click", async functio
                 account_email: email,
                 supabase_user_id: userId
             })
-            .eq("id", invitation.voter_id);
+            .eq("sharepoint_id", voterId);
 
     if (voterError) {
         console.error("Voter update error:", voterError);
@@ -124,16 +128,15 @@ document.getElementById("createAccount").addEventListener("click", async functio
         return;
     }
 
+    // Remove the invitation after successful registration.
     const { error: invitationError } =
         await supabaseClient
-            .from("invitations")
-            .update({
-                used: true
-            })
+            .from("auth_guids")
+            .delete()
             .eq("id", invitation.id);
 
     if (invitationError) {
-        console.error("Invitation update error:", invitationError);
+        console.error("Invitation cleanup error:", invitationError);
         message.textContent =
             "Account created, but invitation could not be completed.";
         return;
@@ -142,4 +145,3 @@ document.getElementById("createAccount").addEventListener("click", async functio
     message.textContent =
         "Account created successfully!";
 });
-
