@@ -6,6 +6,29 @@ document.getElementById("ballotName").textContent =
         ? `Ballot: ${ballotId}`
         : "No ballot specified";
 
+async function checkAuthentication() {
+
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    const message = document.getElementById("message");
+
+    if (error) {
+        console.error(error);
+        message.textContent = "Supabase connection error.";
+        return;
+    }
+
+    if (session) {
+        message.textContent =
+            `Authenticated as ${session.user.email}`;
+    } else {
+        message.textContent =
+            "Not currently signed in.";
+    }
+}
+
+checkAuthentication();
+
 document.getElementById("voteForm").addEventListener("submit", function (event) {
 
     event.preventDefault();
