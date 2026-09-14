@@ -1,10 +1,13 @@
 const params = new URLSearchParams(window.location.search);
+
 const ballotId = params.get("id");
+const invitationToken = params.get("invite");
 
 document.getElementById("ballotName").textContent =
     ballotId
         ? `Ballot: ${ballotId}`
         : "No ballot specified";
+
 
 async function checkAuthentication() {
 
@@ -22,20 +25,42 @@ async function checkAuthentication() {
     if (session) {
         message.textContent =
             `Authenticated as ${session.user.email}`;
-    } else {
-        message.textContent =
-            "Not currently signed in.";
+        return;
     }
+
+    // Not signed in.
+    // Send the voter to registration, preserving the
+    // invitation token and ballot name.
+    if (invitationToken && ballotId) {
+
+        window.location.href =
+            `register.html?invite=${encodeURIComponent(invitationToken)}&ballot=${encodeURIComponent(ballotId)}`;
+
+        return;
+    }
+
+    message.textContent =
+        "You must register or sign in to vote.";
 }
 
+
 checkAuthentication();
+
 
 document.getElementById("voteForm").addEventListener("submit", function (event) {
 
     event.preventDefault();
 
-    const vote =
-        document.querySelector('input[name="vote"]:checked').value;
+    const selectedVote =
+        document.querySelector('input[name="vote"]:checked');
+
+    if (!selectedVote) {
+        document.getElementById("message").textContent =
+            "Please select a vote.";
+        return;
+    }
+
+    const vote = selectedVote.value;
 
     const comment =
         document.getElementById("comment").value;
