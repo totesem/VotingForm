@@ -1,6 +1,7 @@
 const params = new URLSearchParams(window.location.search);
 
 const invitationToken = params.get("invite");
+const voterId = params.get("voter");
 
 const status = document.getElementById("status");
 const registration = document.getElementById("registration");
@@ -16,11 +17,18 @@ async function checkInvitation() {
         return;
     }
 
-    // Find the invitation
+    if (!voterId) {
+        status.textContent = "No voter specified.";
+        return;
+    }
+
+    // Find the invitation using BOTH the invitation token
+    // and the voter ID.
     const { data, error } = await supabaseClient
         .from("invitations")
         .select("id, voter_id, ballot_id, used")
         .eq("invitation_token", invitationToken)
+        .eq("voter_id", voterId)
         .single();
 
     if (error || !data) {
@@ -134,3 +142,4 @@ document.getElementById("createAccount").addEventListener("click", async functio
     message.textContent =
         "Account created successfully!";
 });
+
