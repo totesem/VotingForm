@@ -8,7 +8,8 @@ document.getElementById("ballotName").textContent =
 
 async function checkAuthentication() {
 
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const { data: { session }, error } =
+        await supabaseClient.auth.getSession();Session();
 
     const message = document.getElementById("message");
 
