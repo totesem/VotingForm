@@ -46,6 +46,19 @@
 
     <p id="message"></p>
 
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        const SUPABASE_URL = "https://ndqegqcxiuhkcpdxcpmw/.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_6ByZ7sseW219S8Zlcz2GBg_z0n7140n";
+
+        const supabase = window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_KEY
+        );
+    </script>
+
     <script src="ballot.js"></script>
 </body>
 </html>
