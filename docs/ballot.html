@@ -53,10 +53,14 @@
         const SUPABASE_URL = "https://ndqegqcxiuhkcpdxcpmw/.supabase.co";
         const SUPABASE_KEY = "sb_publishable_6ByZ7sseW219S8Zlcz2GBg_z0n7140n";
 
-        window.supabaseClient = window.supabase.createClient(
+        const supabaseClient = window.supabase.createClient(
             SUPABASE_URL,
             SUPABASE_KEY
         );
+
+        console.log("Supabase library:", window.supabase);
+        console.log("Supabase client:", supabaseClient);
+        console.log("Supabase auth:", supabaseClient.auth);
     </script>
 
     <script src="ballot.js"></script>
