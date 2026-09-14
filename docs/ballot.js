@@ -9,7 +9,7 @@ document.getElementById("ballotName").textContent =
 async function checkAuthentication() {
 
     const { data: { session }, error } =
-        await supabaseClient.auth.getSession();Session();
+        await supabaseClient.auth.getSession();
 
     const message = document.getElementById("message");
 
@@ -34,8 +34,11 @@ document.getElementById("voteForm").addEventListener("submit", function (event) 
 
     event.preventDefault();
 
-    const vote = document.querySelector('input[name="vote"]:checked').value;
-    const comment = document.getElementById("comment").value;
+    const vote =
+        document.querySelector('input[name="vote"]:checked').value;
+
+    const comment =
+        document.getElementById("comment").value;
 
     console.log({
         ballotId: ballotId,
