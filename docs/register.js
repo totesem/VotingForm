@@ -35,111 +35,65 @@ async function checkInvitation() {
         return;
     }
 
-
-    const { data, error } =
-        await supabaseClient
-            .from("auth_guids")
-            .select("id, guid, voter_id, ballot_id")
-            .eq("guid", invitationToken)
-            .eq("voter_id", voterId)
-            .eq("ballot_id", ballotId)
-            .single();
-
-
-    if (error || !data) {
-
-        console.error(
-            "Invitation lookup error:",
-            error
-        );
-
-        status.textContent =
-            "Invalid invitation.";
-
-        return;
-    }
-
-
-    invitation = data;
-
-
-    const { data: voter, error: voterError } =
-        await supabaseClient
-            .from("voters")
-            .select("id, roster_email_1, roster_email_2")
-            .eq("sharepoint_id", voterId)
-            .single();
-
-
-    if (voterError || !voter) {
-
-        console.error(
-            "Voter lookup error:",
-            voterError
-        );
-
-        status.textContent =
-            "Voter record could not be found.";
-
-        return;
-    }
-
-
-    status.textContent =
-        `Invitation for ballot: ${data.ballot_id}`;
-
-
-    invitedEmail.textContent =
-        `Invitation sent to: ${voter.roster_email_1}`;
-
-
-    // Invitation is valid.
-    // The user can now enter their email/password.
-    createAccountButton.disabled = false;
-}
-
-
-// --------------------------------------------------
-// Check whether entered email already has an account
-//
-// Returns:
-//   true  = existing user
-//   false = no existing user
-//   null  = could not determine
-// --------------------------------------------------
-
-async function checkExistingUser(email) {
-
-    const maxAttempts = 5;
+    const maxAttempts = 10;
     const waitTime = 3000;
-
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 
+        status.textContent =
+            attempt === 1
+                ? "Checking your invitation..."
+                : "Your invitation is still being prepared. Checking again...";
+
+
         try {
 
-            const response = await fetch(
-                `${SUPABASE_URL}/functions/v1/check-user?email=${encodeURIComponent(email)}`
-            );
+            const { data, error } =
+                await supabaseClient
+                    .from("auth_guids")
+                    .select("id, guid, voter_id, ballot_id")
+                    .eq("guid", invitationToken)
+                    .eq("voter_id", voterId)
+                    .eq("ballot_id", ballotId)
+                    .single();
 
 
-            if (response.ok) {
+            if (!error && data) {
 
-                const result = await response.json();
+                invitation = data;
 
-                return result.exists === true;
+
+                const { data: voter, error: voterError } =
+                    await supabaseClient
+                        .from("voters")
+                        .select("id, roster_email_1, roster_email_2")
+                        .eq("sharepoint_id", voterId)
+                        .single();
+
+
+                if (!voterError && voter) {
+
+                    status.textContent =
+                        `Invitation for ballot: ${data.ballot_id}`;
+
+                    invitedEmail.textContent =
+                        `Invitation sent to: ${voter.roster_email_1}`;
+
+                    createAccountButton.disabled = false;
+
+                    return;
+                }
+
+                console.error(
+                    "Voter lookup error:",
+                    voterError
+                );
             }
-
-
-            console.error(
-                `User check attempt ${attempt} failed:`,
-                await response.text()
-            );
 
         } catch (error) {
 
             console.error(
-                `User check attempt ${attempt} error:`,
+                "Invitation check error:",
                 error
             );
         }
@@ -154,7 +108,52 @@ async function checkExistingUser(email) {
     }
 
 
-    return null;
+    status.textContent =
+        "Your invitation is taking longer than expected. Please try again in a few moments.";
+}
+
+
+// --------------------------------------------------
+// Check whether entered email already has an account
+//
+// Returns:
+//   true  = existing user
+//   false = no existing user
+//   null  = could not determine
+// --------------------------------------------------
+
+async function checkExistingUser(email) {
+
+    try {
+
+        const response = await fetch(
+            `${SUPABASE_URL}/functions/v1/check-user?email=${encodeURIComponent(email)}`
+        );
+
+        const responseText = await response.text();
+
+        console.log("check-user status:", response.status);
+        console.log("check-user response:", responseText);
+
+        if (!response.ok) {
+            message.textContent =
+                `Account check failed (${response.status}).`;
+            return null;
+        }
+
+        const result = JSON.parse(responseText);
+
+        return result.exists === true;
+
+    } catch (error) {
+
+        console.error("check-user error:", error);
+
+        message.textContent =
+            "There was a problem checking your account.";
+
+        return null;
+    }
 }
 
 
