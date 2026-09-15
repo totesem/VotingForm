@@ -69,6 +69,17 @@
             font-size: 0.9em;
             color: #666;
         }
+
+        .comments {
+            margin-top: 35px;
+        }
+
+        .comment {
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
     </style>
 </head>
 
@@ -201,6 +212,25 @@
                             style="width:${abstainPercent}%">
                         </div>
                     </div>
+
+                </div>
+
+
+                <div class="comments">
+
+                    <h2>Comments</h2>
+
+                    ${
+                        data
+                            .filter(r => r.comment && r.comment.trim())
+                            .map(r => `
+                                <div class="comment">
+                                    [${r.vote}] ${r.comment}
+                                </div>
+                            `)
+                            .join("")
+                            || "<p>No comments submitted.</p>"
+                    }
 
                 </div>
             `;
