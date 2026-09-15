@@ -14,7 +14,7 @@ ballotId
 
 async function checkAuthentication() {
 
-```
+
 const message =
     document.getElementById("message");
 
