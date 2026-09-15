@@ -15,11 +15,16 @@ document.getElementById("ballotName").textContent =
 
 async function checkAuthentication() {
 
-    const { data: { session }, error } =
-        await supabaseClient.auth.getSession();
-
     const message =
         document.getElementById("message");
+
+
+    const {
+        data: { session },
+        error
+    } =
+        await supabaseClient.auth.getSession();
+
 
     if (error) {
 
@@ -31,27 +36,56 @@ async function checkAuthentication() {
         return;
     }
 
-    if (session) {
 
-        message.textContent =
-            `Authenticated as ${session.user.email}`;
-
-        return;
-    }
-
-
-    // Not signed in.
-    // Send the voter to registration.
+    // --------------------------------------------------
+    // Invitation URL
+    //
+    // Never allow an existing browser session to
+    // automatically take over an invitation.
+    // --------------------------------------------------
 
     if (invitationToken && ballotId) {
 
         const voterId =
             params.get("voter");
 
+
+        if (!voterId) {
+
+            message.textContent =
+                "Invalid invitation.";
+
+            return;
+        }
+
+
+        // If another account is already signed in,
+        // sign it out before processing this invitation.
+
+        if (session) {
+
+            await supabaseClient.auth.signOut();
+
+        }
+
+
         window.location.href =
             `register.html?invite=${encodeURIComponent(invitationToken)}` +
             `&voter=${encodeURIComponent(voterId)}` +
             `&ballot=${encodeURIComponent(ballotId)}`;
+
+        return;
+    }
+
+
+    // --------------------------------------------------
+    // Normal ballot access
+    // --------------------------------------------------
+
+    if (session) {
+
+        message.textContent =
+            `Authenticated as ${session.user.email}`;
 
         return;
     }
@@ -71,157 +105,161 @@ checkAuthentication();
 
 document
     .getElementById("voteForm")
-    .addEventListener("submit", async function (event) {
+    .addEventListener(
+        "submit",
+        async function (event) {
 
-        event.preventDefault();
+            event.preventDefault();
 
-        const message =
-            document.getElementById("message");
+            const message =
+                document.getElementById("message");
 
-        const submitButton =
-            document.querySelector(
-                '#voteForm button[type="submit"]'
-            );
-
-
-        // --------------------------------------------------
-        // Verify authentication
-        // --------------------------------------------------
-
-        const {
-            data: { session },
-            error: sessionError
-        } =
-            await supabaseClient.auth.getSession();
-
-
-        if (sessionError || !session) {
-
-            message.textContent =
-                "You must register or sign in to vote.";
-
-            return;
-        }
-
-
-        // --------------------------------------------------
-        // Get selected vote
-        // --------------------------------------------------
-
-        const selectedVote =
-            document.querySelector(
-                'input[name="vote"]:checked'
-            );
-
-
-        if (!selectedVote) {
-
-            message.textContent =
-                "Please select a vote.";
-
-            return;
-        }
-
-
-        const vote =
-            selectedVote.value;
-
-
-        const comment =
-            document
-                .getElementById("comment")
-                .value
-                .trim();
-
-
-        // --------------------------------------------------
-        // Prevent double submission
-        // --------------------------------------------------
-
-        submitButton.disabled = true;
-
-        message.textContent =
-            "Submitting your vote...";
-
-
-        try {
-
-            const response =
-                await fetch(
-                    `${SUPABASE_URL}/functions/v1/submit-vote`,
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization":
-                                `Bearer ${session.access_token}`
-                        },
-
-                        body: JSON.stringify({
-                            ballot_id: ballotId,
-                            vote: vote,
-                            comment: comment
-                        })
-                    }
+            const submitButton =
+                document.querySelector(
+                    '#voteForm button[type="submit"]'
                 );
 
 
-            const result =
-                await response.json();
+            // --------------------------------------------------
+            // Verify authentication
+            // --------------------------------------------------
+
+            const {
+                data: { session },
+                error: sessionError
+            } =
+                await supabaseClient.auth.getSession();
 
 
-            console.log(
-                "submit-vote response:",
-                response.status,
-                result
-            );
-
-
-            if (!response.ok) {
+            if (sessionError || !session) {
 
                 message.textContent =
-                    result.error ||
-                    "Your vote could not be recorded.";
-
-                submitButton.disabled = false;
+                    "You must register or sign in to vote.";
 
                 return;
             }
 
 
             // --------------------------------------------------
-            // Success
+            // Get selected vote
             // --------------------------------------------------
 
-            message.textContent =
-                "Vote recorded successfully!";
+            const selectedVote =
+                document.querySelector(
+                    'input[name="vote"]:checked'
+                );
+
+
+            if (!selectedVote) {
+
+                message.textContent =
+                    "Please select a vote.";
+
+                return;
+            }
+
+
+            const vote =
+                selectedVote.value;
+
+
+            const comment =
+                document
+                    .getElementById("comment")
+                    .value
+                    .trim();
+
+
+            // --------------------------------------------------
+            // Prevent double submission
+            // --------------------------------------------------
 
             submitButton.disabled = true;
 
-
-            // Prevent changing the submitted vote
-            document
-                .querySelectorAll(
-                    '#voteForm input, #voteForm textarea'
-                )
-                .forEach(function (element) {
-
-                    element.disabled = true;
-
-                });
-
-
-        } catch (error) {
-
-            console.error(
-                "Vote submission error:",
-                error
-            );
-
             message.textContent =
-                "There was a problem submitting your vote.";
+                "Submitting your vote...";
 
-            submitButton.disabled = false;
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${SUPABASE_URL}/functions/v1/submit-vote`,
+                        {
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json",
+
+                                "Authorization":
+                                    `Bearer ${session.access_token}`
+                            },
+
+                            body: JSON.stringify({
+                                ballot_id: ballotId,
+                                vote: vote,
+                                comment: comment
+                            })
+                        }
+                    );
+
+
+                const result =
+                    await response.json();
+
+
+                console.log(
+                    "submit-vote response:",
+                    response.status,
+                    result
+                );
+
+
+                if (!response.ok) {
+
+                    message.textContent =
+                        result.error ||
+                        "Your vote could not be recorded.";
+
+                    submitButton.disabled = false;
+
+                    return;
+                }
+
+
+                // --------------------------------------------------
+                // Success
+                // --------------------------------------------------
+
+                message.textContent =
+                    "Vote recorded successfully!";
+
+                submitButton.disabled = true;
+
+
+                document
+                    .querySelectorAll(
+                        '#voteForm input, #voteForm textarea'
+                    )
+                    .forEach(function (element) {
+
+                        element.disabled = true;
+
+                    });
+
+
+            } catch (error) {
+
+                console.error(
+                    "Vote submission error:",
+                    error
+                );
+
+                message.textContent =
+                    "There was a problem submitting your vote.";
+
+                submitButton.disabled = false;
+            }
         }
-    });
+    );
