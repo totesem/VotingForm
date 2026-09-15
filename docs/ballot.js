@@ -59,16 +59,6 @@ async function checkAuthentication() {
         }
 
 
-        // If another account is already signed in,
-        // sign it out before processing this invitation.
-
-        if (session) {
-
-            await supabaseClient.auth.signOut();
-
-        }
-
-
         window.location.href =
             `register.html?invite=${encodeURIComponent(invitationToken)}` +
             `&voter=${encodeURIComponent(voterId)}` +
