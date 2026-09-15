@@ -10,11 +10,12 @@ const invitedEmail = document.getElementById("invitedEmail");
 const message = document.getElementById("message");
 
 let invitation = null;
+let voter = null;
 let existingUser = false;
 
 
 // --------------------------------------------------
-// Check invitation
+// Check invitation and voter
 // --------------------------------------------------
 
 async function checkInvitation() {
@@ -34,7 +35,9 @@ async function checkInvitation() {
         return;
     }
 
-    const { data, error } =
+
+    // Check invitation
+    const { data: invitationData, error: invitationError } =
         await supabaseClient
             .from("auth_guids")
             .select("id, guid, voter_id, ballot_id")
@@ -43,76 +46,97 @@ async function checkInvitation() {
             .eq("ballot_id", ballotId)
             .single();
 
-    if (error || !data) {
-        console.error("Invitation lookup error:", error);
+    if (invitationError || !invitationData) {
+
+        console.error(
+            "Invitation lookup error:",
+            invitationError
+        );
+
         status.textContent = "Invalid invitation.";
         return;
     }
 
-    invitation = data;
+    invitation = invitationData;
 
-    const { data: voter, error: voterError } =
+
+    // Get voter
+    const { data: voterData, error: voterError } =
         await supabaseClient
             .from("voters")
-            .select("id, roster_email_1, roster_email_2")
+            .select(
+                "id, roster_email_1, roster_email_2, account_email, supabase_user_id"
+            )
             .eq("sharepoint_id", voterId)
             .single();
 
-    if (voterError || !voter) {
-        console.error("Voter lookup error:", voterError);
-        status.textContent = "Voter record could not be found.";
+    if (voterError || !voterData) {
+
+        console.error(
+            "Voter lookup error:",
+            voterError
+        );
+
+        status.textContent =
+            "Voter record could not be found.";
+
         return;
     }
 
-    status.textContent =
-        `Invitation for ballot: ${data.ballot_id}`;
+    voter = voterData;
 
-    invitedEmail.textContent =
-        `Invitation sent to: ${voter.roster_email_1}`;
+
+    // --------------------------------------------------
+    // Existing authorized user
+    // --------------------------------------------------
+
+    if (voter.supabase_user_id) {
+
+        existingUser = true;
+
+        status.textContent =
+            "You already have a VotingForm account.";
+
+        invitedEmail.textContent =
+            `Sign in with: ${voter.account_email}`;
+
+        document.getElementById("email").value =
+            voter.account_email;
+
+        document.getElementById("email").readOnly = true;
+
+        document.getElementById("createAccount").textContent =
+            "Sign In";
+
+        document.getElementById("password").placeholder =
+            "Enter your existing password";
+
+    }
+
+
+    // --------------------------------------------------
+    // New user
+    // --------------------------------------------------
+
+    else {
+
+        status.textContent =
+            `Invitation for ballot: ${ballotId}`;
+
+        invitedEmail.textContent =
+            `Invitation sent to: ${voter.roster_email_1}`;
+
+        document.getElementById("createAccount").textContent =
+            "Create Account";
+    }
+
 
     registration.style.display = "block";
 }
 
 
 // --------------------------------------------------
-// Check whether entered email already has an account
-// --------------------------------------------------
-
-async function checkExistingUser(email) {
-
-    try {
-
-        const response = await fetch(
-            `${SUPABASE_URL}/functions/v1/check-user?email=${encodeURIComponent(email)}`
-        );
-
-        if (!response.ok) {
-            console.error(
-                "User check failed:",
-                await response.text()
-            );
-
-            return false;
-        }
-
-        const result = await response.json();
-
-        return result.exists === true;
-
-    } catch (error) {
-
-        console.error(
-            "Existing-user check error:",
-            error
-        );
-
-        return false;
-    }
-}
-
-
-// --------------------------------------------------
-// Create account / sign in
+// Create account OR sign in
 // --------------------------------------------------
 
 document.getElementById("createAccount").addEventListener(
@@ -127,25 +151,27 @@ document.getElementById("createAccount").addEventListener(
 
         message.textContent = "";
 
+
         if (!email || !password) {
+
             message.textContent =
                 "Please enter your email and password.";
+
             return;
         }
+
 
         if (!invitation) {
+
             message.textContent =
                 "Invalid invitation.";
+
             return;
         }
-
-
-        // Check the EMAIL THE USER ENTERED.
-        existingUser = await checkExistingUser(email);
 
 
         // --------------------------------------------------
-        // Existing account → sign in
+        // Existing user → sign in
         // --------------------------------------------------
 
         if (existingUser) {
@@ -164,7 +190,7 @@ document.getElementById("createAccount").addEventListener(
                 );
 
                 message.textContent =
-                    "An account already exists with this email. Please check your password.";
+                    "The email or password is incorrect.";
 
                 return;
             }
@@ -179,7 +205,7 @@ document.getElementById("createAccount").addEventListener(
 
 
         // --------------------------------------------------
-        // New account → sign up
+        // New user → create account
         // --------------------------------------------------
 
         const { data: authData, error: authError } =
@@ -201,6 +227,7 @@ document.getElementById("createAccount").addEventListener(
             return;
         }
 
+
         if (!authData.user) {
 
             message.textContent =
@@ -208,6 +235,7 @@ document.getElementById("createAccount").addEventListener(
 
             return;
         }
+
 
         await completeRegistration(
             authData.user.id,
@@ -218,11 +246,12 @@ document.getElementById("createAccount").addEventListener(
 
 
 // --------------------------------------------------
-// Finish linking voter to Supabase account
+// Complete registration and go to ballot
 // --------------------------------------------------
 
 async function completeRegistration(userId, email) {
 
+    // Link Supabase account to voter
     const { error: voterError } =
         await supabaseClient
             .from("voters")
@@ -231,6 +260,7 @@ async function completeRegistration(userId, email) {
                 supabase_user_id: userId
             })
             .eq("sharepoint_id", voterId);
+
 
     if (voterError) {
 
@@ -246,12 +276,13 @@ async function completeRegistration(userId, email) {
     }
 
 
-    // Consume the invitation.
+    // Consume invitation
     const { error: invitationError } =
         await supabaseClient
             .from("auth_guids")
             .delete()
             .eq("id", invitation.id);
+
 
     if (invitationError) {
 
@@ -267,12 +298,11 @@ async function completeRegistration(userId, email) {
     }
 
 
-    message.textContent =
-        "Registration complete!";
-
-    console.log("Registration complete.");
+    // Go to ballot
+    window.location.href =
+        `ballot.html?id=${encodeURIComponent(ballotId)}`;
 }
 
 
-// Start.
+// Start
 checkInvitation();
