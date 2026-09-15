@@ -132,7 +132,7 @@ if (session) {
 
 message.textContent =
     "You must register or sign in to vote.";
-```
+
 
 }
 
@@ -148,7 +148,7 @@ document
 "submit",
 async function (event) {
 
-```
+
         event.preventDefault();
 
         const message =
