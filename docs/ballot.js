@@ -56,19 +56,41 @@ if (invitationToken && ballotId) {
     // Give them the option to switch accounts.
     // --------------------------------------------------
 
-if (session) {
+    if (session) {
 
-    message.textContent =
-        `You are currently signed in as ${session.user.email}.`;
+        message.textContent =
+            `You are currently signed in as ${session.user.email}.`;
 
-    window.location.href =
-        `register.html?invite=${encodeURIComponent(invitationToken)}` +
-        `&voter=${encodeURIComponent(voterId)}` +
-        `&ballot=${encodeURIComponent(ballotId)}` +
-        `&interest=${encodeURIComponent(interest || "")}`;
+        switchButton.style.display = "inline-block";
 
-    return;
-}
+        switchButton.onclick = async function () {
+
+            switchButton.disabled = true;
+            message.textContent = "Signing out...";
+
+            const { error: signOutError } =
+                await supabaseClient.auth.signOut();
+
+            if (signOutError) {
+
+                console.error(signOutError);
+
+                message.textContent =
+                    "Could not switch accounts.";
+
+                switchButton.disabled = false;
+                return;
+            }
+
+            window.location.href =
+                `register.html?invite=${encodeURIComponent(invitationToken)}` +
+                `&voter=${encodeURIComponent(voterId)}` +
+                `&ballot=${encodeURIComponent(ballotId)}` +
+                `&interest=${encodeURIComponent(interest || "")}`;
+        };
+
+        return;
+    }
 
     // --------------------------------------------------
     // Nobody is signed in.
