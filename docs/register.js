@@ -146,4 +146,342 @@ async function checkExistingUser(email) {
             return null;
         }
 
-        const result = JSON.parse(responseText
+        const result = JSON.parse(responseText);
+
+        return result.exists === true;
+
+    } catch (error) {
+
+        console.error(
+            "check-user error:",
+            error
+        );
+
+        message.textContent =
+            "There was a problem checking your account.";
+
+        return null;
+    }
+}
+
+
+// --------------------------------------------------
+// Create account OR authenticate existing account
+// --------------------------------------------------
+
+createAccountButton.addEventListener(
+    "click",
+    async function () {
+
+        const email =
+            document.getElementById("email").value.trim();
+
+        const password =
+            document.getElementById("password").value;
+
+
+        message.textContent = "";
+
+
+        if (!email) {
+
+            message.textContent =
+                "Please enter your email.";
+
+            return;
+        }
+
+
+        if (!invitation) {
+
+            message.textContent =
+                "Your invitation has not finished loading. Please wait a moment.";
+
+            return;
+        }
+
+
+        // Prevent double-clicks.
+        createAccountButton.disabled = true;
+
+
+        // --------------------------------------------------
+        // Check existing account
+        // --------------------------------------------------
+
+        message.textContent =
+            "Checking your account...";
+
+
+        const existingUser =
+            await checkExistingUser(email);
+
+
+        if (existingUser === null) {
+
+            message.textContent =
+                "We could not check your account right now. Please try again.";
+
+            createAccountButton.disabled = false;
+
+            return;
+        }
+
+
+        // --------------------------------------------------
+        // Existing account → send magic link
+        // --------------------------------------------------
+
+        if (existingUser === true) {
+
+            message.textContent =
+                "This email already has a VotingForm account. Sending you an authentication link...";
+
+
+            const redirectUrl =
+                `${window.location.origin}${window.location.pathname}` +
+                `?invite=${encodeURIComponent(invitationToken)}` +
+                `&voter=${encodeURIComponent(voterId)}` +
+                `&ballot=${encodeURIComponent(ballotId)}` +
+                `&auth=magic`;
+
+
+            const { error: authError } =
+                await supabaseClient.auth.signInWithOtp({
+                    email: email,
+                    options: {
+                        emailRedirectTo: redirectUrl
+                    }
+                });
+
+
+            if (authError) {
+
+                console.error(
+                    "Authentication link error:",
+                    authError
+                );
+
+                message.textContent =
+                    "We could not send the authentication link. Please try again.";
+
+                createAccountButton.disabled = false;
+
+                return;
+            }
+
+
+            message.textContent =
+                "Authentication link sent. Check your email and click the link to continue.";
+
+            return;
+        }
+
+
+        // --------------------------------------------------
+        // No existing account → create account
+        // --------------------------------------------------
+
+        if (!password) {
+
+            message.textContent =
+                "Please enter a password.";
+
+            createAccountButton.disabled = false;
+
+            return;
+        }
+
+
+        message.textContent =
+            "Creating your account...";
+
+
+        const { data: authData, error: authError } =
+            await supabaseClient.auth.signUp({
+                email: email,
+                password: password
+            });
+
+
+        if (authError) {
+
+            console.error(
+                "Sign-up error:",
+                authError
+            );
+
+            message.textContent =
+                authError.message;
+
+            createAccountButton.disabled = false;
+
+            return;
+        }
+
+
+        if (!authData.user) {
+
+            message.textContent =
+                "Account could not be created.";
+
+            createAccountButton.disabled = false;
+
+            return;
+        }
+
+
+        await completeRegistration(
+            authData.user.id,
+            email
+        );
+    }
+);
+
+
+// --------------------------------------------------
+// Complete registration
+// --------------------------------------------------
+
+async function completeRegistration(userId, email) {
+
+
+    // Link Supabase account to voter
+    const { error: voterError } =
+        await supabaseClient
+            .from("voters")
+            .update({
+                account_email: email,
+                supabase_user_id: userId
+            })
+            .eq("sharepoint_id", voterId);
+
+
+    if (voterError) {
+
+        console.error(
+            "Voter update error:",
+            JSON.stringify(voterError, null, 2)
+        );
+
+        message.textContent =
+            "Account was authenticated, but the voter record could not be updated.";
+
+        createAccountButton.disabled = false;
+
+        return;
+    }
+
+
+    // Consume invitation
+    const { error: invitationError } =
+        await supabaseClient
+            .from("auth_guids")
+            .delete()
+            .eq("id", invitation.id);
+
+
+    if (invitationError) {
+
+        console.error(
+            "Invitation cleanup error:",
+            invitationError
+        );
+
+        message.textContent =
+            "Account was authenticated, but the invitation could not be completed.";
+
+        createAccountButton.disabled = false;
+
+        return;
+    }
+
+
+    // Registration complete.
+    message.textContent =
+        "Registration complete!";
+
+
+    // Go to ballot.
+    setTimeout(function () {
+
+        window.location.href =
+            `ballot.html?id=${encodeURIComponent(ballotId)}`;
+
+    }, 500);
+}
+
+
+// --------------------------------------------------
+// Handle return from magic-link authentication
+// --------------------------------------------------
+
+async function handleMagicAuthentication() {
+
+    if (!magicAuth) {
+        return;
+    }
+
+
+    message.textContent =
+        "Completing authentication...";
+
+
+    const { data, error } =
+        await supabaseClient.auth.getSession();
+
+
+    if (error) {
+
+        console.error(
+            "Session error:",
+            error
+        );
+
+        message.textContent =
+            "Authentication could not be completed. Please try again.";
+
+        return;
+    }
+
+
+    if (!data.session || !data.session.user) {
+
+        message.textContent =
+            "Authentication could not be completed. Please try the link again.";
+
+        return;
+    }
+
+
+    const user =
+        data.session.user;
+
+
+    await completeRegistration(
+        user.id,
+        user.email
+    );
+}
+
+
+// --------------------------------------------------
+// Start
+// --------------------------------------------------
+
+async function start() {
+
+    const invitationReady =
+        await checkInvitation();
+
+
+    if (!invitationReady) {
+        return;
+    }
+
+
+    await handleMagicAuthentication();
+}
+
+
+start();
