@@ -41,7 +41,7 @@ let existingAccount = false;
 
 async function checkInvitation() {
 
-```
+
 if (!invitationToken || !voterId || !ballotId) {
 
     status.textContent =
@@ -158,7 +158,7 @@ registration.style.display =
     "block";
 
 updateButton();
-```
+
 
 }
 
@@ -168,7 +168,6 @@ updateButton();
 
 function updateButton() {
 
-```
 const email =
     emailInput.value.trim();
 
@@ -192,7 +191,7 @@ button.disabled =
     !password ||
     !confirmPassword ||
     password !== confirmPassword;
-```
+
 
 }
 
@@ -220,7 +219,7 @@ userId,
 email
 ) {
 
-```
+
 const { error: voterError } =
     await supabaseClient
         .from("voters")
@@ -272,7 +271,7 @@ window.location.href =
     `ballot.html?id=${encodeURIComponent(ballotId)}`;
 
 return true;
-```
+
 
 }
 
@@ -284,7 +283,6 @@ button.addEventListener(
 "click",
 async function () {
 
-```
     button.disabled =
         true;
 
@@ -405,7 +403,6 @@ async function () {
             false;
     }
 }
-```
 
 );
 
