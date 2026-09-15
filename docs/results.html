@@ -118,6 +118,8 @@
                     .from("votes")
                     .select("vote")
                     .eq("ballot_id", ballotId);
+                    
+            console.log("Votes returned:", data);
 
             if (error) {
                 console.error(error);
