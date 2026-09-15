@@ -84,7 +84,7 @@ if (invitationToken && ballotId) {
                 `register.html?invite=${encodeURIComponent(invitationToken)}` +
                 `&voter=${encodeURIComponent(voterId)}` +
                 `&ballot=${encodeURIComponent(ballotId)}` +
-                `&interest=${encodeURIComponent(interest || "")}
+                `&interest=${encodeURIComponent(interest || "")}`
         };
 
         return;
