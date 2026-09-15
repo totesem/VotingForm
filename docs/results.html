@@ -115,7 +115,7 @@
 
             const { data, error } =
                 await supabaseClient
-                    .from("responses")
+                    .from("votes")
                     .select("vote")
                     .eq("ballot_id", ballotId);
 
