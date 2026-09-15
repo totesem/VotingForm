@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,61 +9,67 @@
 
 <body>
 
-    <p id="ballotName" style="font-size: 28px;">Loading ballot...</p>
+```
+<p id="ballotName" style="font-size: 28px;">Loading ballot...</p>
 
-    <form id="voteForm">
+<form id="voteForm">
 
-        <h2 style="font-weight: normal; text-decoration: underline;">Your Vote</h2>
+    <h2 style="font-weight: normal; text-decoration: underline;">Your Vote</h2>
 
-        <label>
-            <input type="radio" name="vote" value="Yes" required>
-            Yes
-        </label>
+    <label>
+        <input type="radio" name="vote" value="Yes" required>
+        Yes
+    </label>
 
-        <label>
-            <input type="radio" name="vote" value="No">
-            No
-        </label>
+    <label>
+        <input type="radio" name="vote" value="No">
+        No
+    </label>
 
-        <label>
-            <input type="radio" name="vote" value="Abstain">
-            Abstain
-        </label>
+    <label>
+        <input type="radio" name="vote" value="Abstain">
+        Abstain
+    </label>
 
-        <h2 style="font-weight: normal; text-decoration: underline;">Comments</h2>
+    <h2 style="font-weight: normal; text-decoration: underline;">Comments</h2>
 
-        <textarea
-            id="comment"
-            name="comment"
-            rows="5"
-            cols="50"
-            placeholder="Optional comments"></textarea>
+    <textarea
+        id="comment"
+        name="comment"
+        rows="5"
+        cols="50"
+        placeholder="Optional comments"></textarea>
 
-        <br><br>
+    <br><br>
 
-        <button type="submit">Submit Vote</button>
+    <button type="submit">Submit Vote</button>
 
-    </form>
+</form>
 
-    <p id="message"></p>
+<p id="message"></p>
 
+<button id="switchAccount" style="display:none;">
+    Switch Account
+</button>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script>
-        const SUPABASE_URL = "https://ndqegqcxiuhkcpdxcpmw.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_6ByZ7sseW219S8Zlcz2GBg_z0n7140n";
+<script>
+    const SUPABASE_URL = "https://ndqegqcxiuhkcpdxcpmw.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_6ByZ7sseW219S8Zlcz2GBg_z0n7140n";
 
-        const supabaseClient = window.supabase.createClient(
-            SUPABASE_URL,
-            SUPABASE_KEY
-        );
+    const supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
 
-        console.log("Supabase library:", window.supabase);
-        console.log("Supabase client:", supabaseClient);
-        console.log("Supabase auth:", supabaseClient.auth);
-    </script>
+    console.log("Supabase library:", window.supabase);
+    console.log("Supabase client:", supabaseClient);
+    console.log("Supabase auth:", supabaseClient.auth);
+</script>
 
-    <script src="ballot.js"></script>
+<script src="ballot.js"></script>
+```
+
 </body>
 </html>
