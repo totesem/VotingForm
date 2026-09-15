@@ -74,11 +74,33 @@ async function checkAuthentication() {
 
     if (session) {
 
+        const { data: voter } =
+            await supabaseClient
+                .from("voters")
+                .select("supabase_user_id")
+                .eq("sharepoint_id", voterId)
+                .single();
+
+        if (voter && voter.supabase_user_id === session.user.id) {
+
+            message.textContent =
+                `Authenticated as ${session.user.email}`;
+
+            return;
+        }
+
         message.textContent =
-            `Authenticated as ${session.user.email}`;
+            `You are currently signed in as ${session.user.email}. Please sign out before using this invitation.`;
 
         return;
     }
+
+    window.location.href =
+        `register.html?invite=${encodeURIComponent(invitationToken)}` +
+        `&voter=${encodeURIComponent(voterId)}` +
+        `&ballot=${encodeURIComponent(ballotId)}`;
+
+    return;
 
 
     message.textContent =
