@@ -3,6 +3,7 @@ const params = new URLSearchParams(window.location.search);
 const invitationToken = params.get("invite");
 const voterId = params.get("voter");
 const ballotId = params.get("ballot");
+const magicAuth = params.get("auth") === "magic";
 
 const status = document.getElementById("status");
 const registration = document.getElementById("registration");
@@ -22,17 +23,17 @@ async function checkInvitation() {
 
     if (!invitationToken) {
         status.textContent = "No invitation provided.";
-        return;
+        return false;
     }
 
     if (!voterId) {
         status.textContent = "No voter specified.";
-        return;
+        return false;
     }
 
     if (!ballotId) {
         status.textContent = "No ballot specified.";
-        return;
+        return false;
     }
 
     const maxAttempts = 10;
@@ -81,7 +82,7 @@ async function checkInvitation() {
 
                     createAccountButton.disabled = false;
 
-                    return;
+                    return true;
                 }
 
                 console.error(
@@ -110,6 +111,8 @@ async function checkInvitation() {
 
     status.textContent =
         "Your invitation is taking longer than expected. Please try again in a few moments.";
+
+    return false;
 }
 
 
@@ -136,257 +139,11 @@ async function checkExistingUser(email) {
         console.log("check-user response:", responseText);
 
         if (!response.ok) {
+
             message.textContent =
                 `Account check failed (${response.status}).`;
+
             return null;
         }
 
-        const result = JSON.parse(responseText);
-
-        return result.exists === true;
-
-    } catch (error) {
-
-        console.error("check-user error:", error);
-
-        message.textContent =
-            "There was a problem checking your account.";
-
-        return null;
-    }
-}
-
-
-// --------------------------------------------------
-// Create account OR sign in
-// --------------------------------------------------
-
-createAccountButton.addEventListener(
-    "click",
-    async function () {
-
-        const email =
-            document.getElementById("email").value.trim();
-
-        const password =
-            document.getElementById("password").value;
-
-
-        message.textContent = "";
-
-
-        if (!email || !password) {
-
-            message.textContent =
-                "Please enter your email and password.";
-
-            return;
-        }
-
-
-        if (!invitation) {
-
-            message.textContent =
-                "Your invitation has not finished loading. Please wait a moment.";
-
-            return;
-        }
-
-
-        // Prevent double-clicks.
-        createAccountButton.disabled = true;
-
-
-        // --------------------------------------------------
-        // Check existing account
-        // --------------------------------------------------
-
-        message.textContent =
-            "Checking your account...";
-
-
-        const existingUser =
-            await checkExistingUser(email);
-
-
-        if (existingUser === null) {
-
-            message.textContent =
-                "We could not check your account right now. Please try again.";
-
-            createAccountButton.disabled = false;
-
-            return;
-        }
-
-
-        // --------------------------------------------------
-        // Existing account → sign in
-        // --------------------------------------------------
-
-        if (existingUser === true) {
-
-            message.textContent =
-                "Signing you in...";
-
-
-            const { data: authData, error: authError } =
-                await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-
-            if (authError) {
-
-                console.error(
-                    "Sign-in error:",
-                    authError
-                );
-
-                message.textContent =
-                    "An account already exists with this email. Please check your password.";
-
-                createAccountButton.disabled = false;
-
-                return;
-            }
-
-
-            await completeRegistration(
-                authData.user.id,
-                email
-            );
-
-            return;
-        }
-
-
-        // --------------------------------------------------
-        // No existing account → create account
-        // --------------------------------------------------
-
-        message.textContent =
-            "Creating your account...";
-
-
-        const { data: authData, error: authError } =
-            await supabaseClient.auth.signUp({
-                email: email,
-                password: password
-            });
-
-
-        if (authError) {
-
-            console.error(
-                "Sign-up error:",
-                authError
-            );
-
-            message.textContent =
-                authError.message;
-
-            createAccountButton.disabled = false;
-
-            return;
-        }
-
-
-        if (!authData.user) {
-
-            message.textContent =
-                "Account could not be created.";
-
-            createAccountButton.disabled = false;
-
-            return;
-        }
-
-
-        await completeRegistration(
-            authData.user.id,
-            email
-        );
-    }
-);
-
-
-// --------------------------------------------------
-// Complete registration
-// --------------------------------------------------
-
-async function completeRegistration(userId, email) {
-
-
-    // Link Supabase account to voter
-    const { error: voterError } =
-        await supabaseClient
-            .from("voters")
-            .update({
-                account_email: email,
-                supabase_user_id: userId
-            })
-            .eq("sharepoint_id", voterId);
-
-
-    if (voterError) {
-
-        console.error(
-            "Voter update error:",
-            JSON.stringify(voterError, null, 2)
-        );
-
-        message.textContent =
-            "Account was authenticated, but the voter record could not be updated.";
-
-        createAccountButton.disabled = false;
-
-        return;
-    }
-
-
-    // Consume invitation
-    const { error: invitationError } =
-        await supabaseClient
-            .from("auth_guids")
-            .delete()
-            .eq("id", invitation.id);
-
-
-    if (invitationError) {
-
-        console.error(
-            "Invitation cleanup error:",
-            invitationError
-        );
-
-        message.textContent =
-            "Account was authenticated, but the invitation could not be completed.";
-
-        createAccountButton.disabled = false;
-
-        return;
-    }
-
-
-    // Registration complete.
-    message.textContent =
-        "Registration complete!";
-
-
-    // Go to ballot.
-    setTimeout(function () {
-
-        window.location.href =
-            `ballot.html?id=${encodeURIComponent(ballotId)}`;
-
-    }, 500);
-}
-
-
-// --------------------------------------------------
-// Start
-// --------------------------------------------------
-
-checkInvitation();
+        const result = JSON.parse(responseText
