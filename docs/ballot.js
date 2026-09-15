@@ -185,12 +185,79 @@ document
     message.textContent =
         "Submitting your vote...";
 
-    try {
+try {
 
-        const response =
-            await fetch(
-                `${SUPABASE_URL}/functions/v1/submit-vote`,
-                {
-                    method: "POST",
+    const response =
+        await fetch(
+            `${SUPABASE_URL}/functions/v1/submit-vote`,
+            {
+                method: "POST",
 
-                    head 
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization":
+                        `Bearer ${session.access_token}`
+                },
+
+                body: JSON.stringify({
+                    ballot_id: ballotId,
+                    vote: vote,
+                    comment: comment
+                })
+            }
+        );
+
+    const result =
+        await response.json();
+
+    console.log(
+        "submit-vote response:",
+        response.status,
+        result
+    );
+
+    if (!response.ok) {
+
+        message.textContent =
+            result.error ||
+            "Your vote could not be recorded.";
+
+        submitButton.disabled = false;
+
+        return;
+    }
+
+    // --------------------------------------------------
+    // Success
+    // --------------------------------------------------
+
+    message.textContent =
+        "Vote recorded successfully!";
+
+    submitButton.disabled = true;
+
+    document
+        .querySelectorAll(
+            '#voteForm input, #voteForm textarea'
+        )
+        .forEach(function (element) {
+
+            element.disabled = true;
+
+        });
+
+} catch (error) {
+
+    console.error(
+        "Vote submission error:",
+        error
+    );
+
+    message.textContent =
+        "There was a problem submitting your vote.";
+
+    submitButton.disabled = false;
+}
+
+
+});
