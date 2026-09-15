@@ -1,67 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
 
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>VotingForm Registration</title>
 </head>
 
 <body>
 
-    <h1>VotingForm</h1>
+```
+<h1>VotingForm</h1>
 
-    <p id="status">Checking your invitation...</p>
+<p id="status">Checking your invitation...</p>
 
-    <div id="registration">
+<div id="registration" style="display:none;">
 
-        <h2>Create your ballot account</h2>
+    <h2>Access your ballot</h2>
 
-        <p id="invitedEmail"></p>
+    <p id="invitedEmail"></p>
+
+    <label>
+        Email for your ballot account:
+        <br>
+        <input type="email" id="email" required>
+    </label>
+
+    <br><br>
+
+    <label>
+        Password:
+        <br>
+        <input type="password" id="password" required>
+    </label>
+
+    <br><br>
+
+    <div id="confirmPasswordArea">
 
         <label>
-            Email for your ballot account:
+            Confirm Password:
             <br>
-            <input type="email" id="email" required>
+            <input type="password" id="confirmPassword" required>
         </label>
 
         <br><br>
-
-        <label>
-            Password:
-            <br>
-            <input type="password" id="password" required>
-        </label>
-
-        <br><br>
-
-        <button type="button" id="createAccount" disabled>
-            Create Account
-        </button>
 
     </div>
 
-    <p id="message"></p>
+    <button type="button" id="createAccount" disabled>
+        Continue
+    </button>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</div>
 
-    <script>
-        const SUPABASE_URL =
-            "https://ndqegqcxiuhkcpdxcpmw.supabase.co";
+<p id="message"></p>
 
-        const SUPABASE_KEY =
-            "sb_publishable_6ByZ7sseW219S8Zlcz2GBg_z0n7140n";
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        const supabaseClient =
-            window.supabase.createClient(
-                SUPABASE_URL,
-                SUPABASE_KEY
-            );
-    </script>
+<script>
+    const SUPABASE_URL =
+        "https://ndqegqcxiuhkcpdxcpmw.supabase.co";
 
-    <script src="register.js"></script>
+    const SUPABASE_KEY =
+        "sb_publishable_6ByZ7sseW219S8Zlcz2GBg_z0n7140n";
+
+    const supabaseClient =
+        window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_KEY
+        );
+</script>
+
+<script src="register.js"></script>
+```
 
 </body>
-
 </html>
