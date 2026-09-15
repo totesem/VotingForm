@@ -377,7 +377,9 @@ async function completeRegistration(userId, email) {
     const { error: invitationError } =
         await supabaseClient
             .from("auth_guids")
-            .delete()
+            .update({
+                used_at: new Date().toISOString()
+            })
             .eq("id", invitation.id);
 
 
