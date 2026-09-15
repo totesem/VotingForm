@@ -88,12 +88,26 @@ if (!data) {
 invitation = data;
 
 
+//const { data: voter, error: voterError } =
+ //   await supabaseClient
+//        .from("voters")
+ //       .select("roster_email_1, account_email, supabase_user_id")
+ //       .eq("sharepoint_id", voterId)
+  //      .single();
+
+
 const { data: voter, error: voterError } =
-    await supabaseClient
-        .from("voters")
-        .select("roster_email_1, account_email, supabase_user_id")
-        .eq("sharepoint_id", voterId)
-        .single();
+    invitation.supabase_user_id
+        ? await supabaseClient
+            .from("voters")
+            .select("roster_email_1, account_email, supabase_user_id")
+            .eq("supabase_user_id", invitation.supabase_user_id)
+            .single()
+        : await supabaseClient
+            .from("voters")
+            .select("roster_email_1, account_email, supabase_user_id")
+            .eq("sharepoint_id", voterId)
+            .single();
 
 
 if (voterError || !voter) {
