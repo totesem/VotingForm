@@ -10,7 +10,6 @@ const invitedEmail = document.getElementById("invitedEmail");
 const message = document.getElementById("message");
 
 let invitation = null;
-let existingUser = false;
 
 
 // --------------------------------------------------
@@ -34,6 +33,7 @@ async function checkInvitation() {
         return;
     }
 
+
     const { data, error } =
         await supabaseClient
             .from("auth_guids")
@@ -43,13 +43,23 @@ async function checkInvitation() {
             .eq("ballot_id", ballotId)
             .single();
 
+
     if (error || !data) {
-        console.error("Invitation lookup error:", error);
-        status.textContent = "Invalid invitation.";
+
+        console.error(
+            "Invitation lookup error:",
+            error
+        );
+
+        status.textContent =
+            "Invalid invitation.";
+
         return;
     }
 
+
     invitation = data;
+
 
     const { data: voter, error: voterError } =
         await supabaseClient
@@ -58,17 +68,28 @@ async function checkInvitation() {
             .eq("sharepoint_id", voterId)
             .single();
 
+
     if (voterError || !voter) {
-        console.error("Voter lookup error:", voterError);
-        status.textContent = "Voter record could not be found.";
+
+        console.error(
+            "Voter lookup error:",
+            voterError
+        );
+
+        status.textContent =
+            "Voter record could not be found.";
+
         return;
     }
+
 
     status.textContent =
         `Invitation for ballot: ${data.ballot_id}`;
 
+
     invitedEmail.textContent =
         `Invitation sent to: ${voter.roster_email_1}`;
+
 
     registration.style.display = "block";
 }
@@ -76,43 +97,66 @@ async function checkInvitation() {
 
 // --------------------------------------------------
 // Check whether entered email already has an account
+//
+// Returns:
+//   true  = existing user
+//   false = no existing user
+//   null  = could not determine
 // --------------------------------------------------
 
 async function checkExistingUser(email) {
 
-    try {
+    const maxAttempts = 5;
+    const waitTime = 3000;
 
-        const response = await fetch(
-            `${SUPABASE_URL}/functions/v1/check-user?email=${encodeURIComponent(email)}`
-        );
 
-        if (!response.ok) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+
+        try {
+
+            const response = await fetch(
+                `${SUPABASE_URL}/functions/v1/check-user?email=${encodeURIComponent(email)}`
+            );
+
+
+            if (response.ok) {
+
+                const result = await response.json();
+
+                return result.exists === true;
+            }
+
+
             console.error(
-                "User check failed:",
+                `User check attempt ${attempt} failed:`,
                 await response.text()
             );
 
-            return false;
+        } catch (error) {
+
+            console.error(
+                `User check attempt ${attempt} error:`,
+                error
+            );
         }
 
-        const result = await response.json();
 
-        return result.exists === true;
+        if (attempt < maxAttempts) {
 
-    } catch (error) {
-
-        console.error(
-            "Existing-user check error:",
-            error
-        );
-
-        return false;
+            await new Promise(
+                resolve => setTimeout(resolve, waitTime)
+            );
+        }
     }
+
+
+    // We could not determine whether the account exists.
+    return null;
 }
 
 
 // --------------------------------------------------
-// Create account / sign in
+// Create account OR sign in
 // --------------------------------------------------
 
 document.getElementById("createAccount").addEventListener(
@@ -125,154 +169,26 @@ document.getElementById("createAccount").addEventListener(
         const password =
             document.getElementById("password").value;
 
+
         message.textContent = "";
 
+
         if (!email || !password) {
+
             message.textContent =
                 "Please enter your email and password.";
+
             return;
         }
+
 
         if (!invitation) {
+
             message.textContent =
                 "Invalid invitation.";
-            return;
-        }
-
-
-        // Check the EMAIL THE USER ENTERED.
-        existingUser = await checkExistingUser(email);
-
-
-        // --------------------------------------------------
-        // Existing account → sign in
-        // --------------------------------------------------
-
-        if (existingUser) {
-
-            const { data: authData, error: authError } =
-                await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-            if (authError) {
-
-                console.error(
-                    "Sign-in error:",
-                    authError
-                );
-
-                message.textContent =
-                    "An account already exists with this email. Please check your password.";
-
-                return;
-            }
-
-            await completeRegistration(
-                authData.user.id,
-                email
-            );
 
             return;
         }
 
 
-        // --------------------------------------------------
-        // New account → sign up
-        // --------------------------------------------------
-
-        const { data: authData, error: authError } =
-            await supabaseClient.auth.signUp({
-                email: email,
-                password: password
-            });
-
-        if (authError) {
-
-            console.error(
-                "Sign-up error:",
-                authError
-            );
-
-            message.textContent =
-                authError.message;
-
-            return;
-        }
-
-        if (!authData.user) {
-
-            message.textContent =
-                "Account could not be created.";
-
-            return;
-        }
-
-        await completeRegistration(
-            authData.user.id,
-            email
-        );
-    }
-);
-
-
-// --------------------------------------------------
-// Finish linking voter to Supabase account
-// --------------------------------------------------
-
-async function completeRegistration(userId, email) {
-
-    const { error: voterError } =
-        await supabaseClient
-            .from("voters")
-            .update({
-                account_email: email,
-                supabase_user_id: userId
-            })
-            .eq("sharepoint_id", voterId);
-
-    if (voterError) {
-
-        console.error(
-            "Voter update error:",
-            JSON.stringify(voterError, null, 2)
-        );
-
-        message.textContent =
-            "Account was authenticated, but the voter record could not be updated.";
-
-        return;
-    }
-
-
-    // Consume the invitation.
-    const { error: invitationError } =
-        await supabaseClient
-            .from("auth_guids")
-            .delete()
-            .eq("id", invitation.id);
-
-    if (invitationError) {
-
-        console.error(
-            "Invitation cleanup error:",
-            invitationError
-        );
-
-        message.textContent =
-            "Account was authenticated, but the invitation could not be completed.";
-
-        return;
-    }
-
-
-    message.textContent =
-        "Registration complete!";
-
-    console.log("Registration complete.");
-}
-
-
-// Start.
-checkInvitation();
+        // ---------
