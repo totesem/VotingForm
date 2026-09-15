@@ -2,10 +2,13 @@ const params = new URLSearchParams(window.location.search);
 
 const ballotId = params.get("id");
 
+const interest = params.get("interest");
+
 document.getElementById("resultsLink").href =
     `results.html?id=${encodeURIComponent(ballotId)}`;
 
 const invitationToken = params.get("invite");
+
 
 document.getElementById("ballotName").textContent =
 ballotId
@@ -80,7 +83,8 @@ if (invitationToken && ballotId) {
             window.location.href =
                 `register.html?invite=${encodeURIComponent(invitationToken)}` +
                 `&voter=${encodeURIComponent(voterId)}` +
-                `&ballot=${encodeURIComponent(ballotId)}`;
+                `&ballot=${encodeURIComponent(ballotId)}` +
+                `&interest=${encodeURIComponent(interest || "")}
         };
 
         return;
@@ -94,7 +98,8 @@ if (invitationToken && ballotId) {
     window.location.href =
         `register.html?invite=${encodeURIComponent(invitationToken)}` +
         `&voter=${encodeURIComponent(voterId)}` +
-        `&ballot=${encodeURIComponent(ballotId)}`;
+        `&ballot=${encodeURIComponent(ballotId)}` +
+        `&interest=${encodeURIComponent(interest || "")}
 
     return;
 }

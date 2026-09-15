@@ -3,6 +3,7 @@ const params = new URLSearchParams(window.location.search);
 const invitationToken = params.get("invite");
 const voterId = params.get("voter");
 const ballotId = params.get("ballot");
+const interest = params.get("interest");
 
 const status =
 document.getElementById("status");
@@ -268,7 +269,8 @@ if (invitationError) {
 
 
 window.location.href =
-    `ballot.html?id=${encodeURIComponent(ballotId)}`;
+    `ballot.html?id=${encodeURIComponent(ballotId)}` +
+    `&interest=${encodeURIComponent(interest || "")}`
 
 return true;
 
