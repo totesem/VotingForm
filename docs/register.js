@@ -10,6 +10,12 @@ const invitedEmail = document.getElementById("invitedEmail");
 const message = document.getElementById("message");
 
 let invitation = null;
+let existingUser = false;
+
+
+// --------------------------------------------------
+// Check invitation
+// --------------------------------------------------
 
 async function checkInvitation() {
 
@@ -28,8 +34,6 @@ async function checkInvitation() {
         return;
     }
 
-    // Look up the invitation that Power Automate
-    // registered in Supabase.
     const { data, error } =
         await supabaseClient
             .from("auth_guids")
@@ -47,7 +51,6 @@ async function checkInvitation() {
 
     invitation = data;
 
-    // Find the voter record.
     const { data: voter, error: voterError } =
         await supabaseClient
             .from("voters")
@@ -70,48 +73,156 @@ async function checkInvitation() {
     registration.style.display = "block";
 }
 
-checkInvitation();
 
+// --------------------------------------------------
+// Check whether entered email already has an account
+// --------------------------------------------------
 
-document.getElementById("createAccount").addEventListener("click", async function () {
+async function checkExistingUser(email) {
 
-    console.log("CREATE ACCOUNT CLICKED");
+    try {
 
-    const email =
-        document.getElementById("email").value.trim();
+        const response = await fetch(
+            `${SUPABASE_URL}/functions/v1/check-user?email=${encodeURIComponent(email)}`
+        );
 
-    const password =
-        document.getElementById("password").value;
+        if (!response.ok) {
+            console.error(
+                "User check failed:",
+                await response.text()
+            );
 
-    message.textContent = "";
+            return false;
+        }
 
-    if (!email || !password) {
-        message.textContent =
-            "Please enter an email and password.";
-        return;
+        const result = await response.json();
+
+        return result.exists === true;
+
+    } catch (error) {
+
+        console.error(
+            "Existing-user check error:",
+            error
+        );
+
+        return false;
     }
+}
 
-    if (!invitation) {
-        message.textContent =
-            "Invalid invitation.";
-        return;
+
+// --------------------------------------------------
+// Create account / sign in
+// --------------------------------------------------
+
+document.getElementById("createAccount").addEventListener(
+    "click",
+    async function () {
+
+        const email =
+            document.getElementById("email").value.trim();
+
+        const password =
+            document.getElementById("password").value;
+
+        message.textContent = "";
+
+        if (!email || !password) {
+            message.textContent =
+                "Please enter your email and password.";
+            return;
+        }
+
+        if (!invitation) {
+            message.textContent =
+                "Invalid invitation.";
+            return;
+        }
+
+
+        // Check the EMAIL THE USER ENTERED.
+        existingUser = await checkExistingUser(email);
+
+
+        // --------------------------------------------------
+        // Existing account → sign in
+        // --------------------------------------------------
+
+        if (existingUser) {
+
+            const { data: authData, error: authError } =
+                await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+            if (authError) {
+
+                console.error(
+                    "Sign-in error:",
+                    authError
+                );
+
+                message.textContent =
+                    "An account already exists with this email. Please check your password.";
+
+                return;
+            }
+
+            await completeRegistration(
+                authData.user.id,
+                email
+            );
+
+            return;
+        }
+
+
+        // --------------------------------------------------
+        // New account → sign up
+        // --------------------------------------------------
+
+        const { data: authData, error: authError } =
+            await supabaseClient.auth.signUp({
+                email: email,
+                password: password
+            });
+
+        if (authError) {
+
+            console.error(
+                "Sign-up error:",
+                authError
+            );
+
+            message.textContent =
+                authError.message;
+
+            return;
+        }
+
+        if (!authData.user) {
+
+            message.textContent =
+                "Account could not be created.";
+
+            return;
+        }
+
+        await completeRegistration(
+            authData.user.id,
+            email
+        );
     }
+);
 
-    const { data: authData, error: authError } =
-        await supabaseClient.auth.signUp({
-            email: email,
-            password: password
-        });
 
-    if (authError) {
-        console.error("Auth error:", authError);
-        message.textContent = authError.message;
-        return;
-    }
+// --------------------------------------------------
+// Finish linking voter to Supabase account
+// --------------------------------------------------
 
-    const userId = authData.user.id;
+async function completeRegistration(userId, email) {
 
-    // Connect the Supabase account to the voter.
     const { error: voterError } =
         await supabaseClient
             .from("voters")
@@ -122,16 +233,20 @@ document.getElementById("createAccount").addEventListener("click", async functio
             .eq("sharepoint_id", voterId);
 
     if (voterError) {
+
         console.error(
             "Voter update error:",
             JSON.stringify(voterError, null, 2)
         );
+
         message.textContent =
-            "Account created, but voter record could not be updated.";
+            "Account was authenticated, but the voter record could not be updated.";
+
         return;
     }
 
-    // Remove the invitation after successful registration.
+
+    // Consume the invitation.
     const { error: invitationError } =
         await supabaseClient
             .from("auth_guids")
@@ -139,12 +254,25 @@ document.getElementById("createAccount").addEventListener("click", async functio
             .eq("id", invitation.id);
 
     if (invitationError) {
-        console.error("Invitation cleanup error:", invitationError);
+
+        console.error(
+            "Invitation cleanup error:",
+            invitationError
+        );
+
         message.textContent =
-            "Account created, but invitation could not be completed.";
+            "Account was authenticated, but the invitation could not be completed.";
+
         return;
     }
 
+
     message.textContent =
-        "Account created successfully!";
-});
+        "Registration complete!";
+
+    console.log("Registration complete.");
+}
+
+
+// Start.
+checkInvitation();
