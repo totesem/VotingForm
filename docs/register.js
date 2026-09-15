@@ -355,31 +355,43 @@ async function () {
 
         if (error) {
 
-            console.error(
-                "Account creation error:",
-                error
-            );
+    console.error(
+        "Account creation error:",
+        error
+    );
 
-            message.textContent =
-                `Account creation error: ${error.message}`;
+    if (
+        error.message.toLowerCase().includes("already registered")
+    ) {
 
-            button.disabled =
-                false;
+        existingAccount = true;
 
-            return;
-        }
+        status.textContent =
+            "Sign in to access your ballot.";
 
+        button.textContent =
+            "Sign In";
 
-        if (!data.user) {
+        confirmPasswordArea.style.display =
+            "none";
 
-            message.textContent =
-                "The account could not be created.";
+        button.disabled =
+            false;
 
-            button.disabled =
-                false;
+        message.textContent =
+            "An account already exists for this email. Please sign in.";
 
-            return;
-        }
+        return;
+    }
+
+    message.textContent =
+        `Account creation error: ${error.message}`;
+
+    button.disabled =
+        false;
+
+    return;
+}
 
 
         // --------------------------------------------------
