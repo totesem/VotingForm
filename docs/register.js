@@ -249,7 +249,8 @@ const { error: invitationError } =
     await supabaseClient
         .from("auth_guids")
         .update({
-            used_at: new Date().toISOString()
+            used_at: new Date().toISOString(),
+            supabase_user_id: userId
         })
         .eq("id", invitation.id);
 
