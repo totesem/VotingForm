@@ -270,7 +270,7 @@ if (invitationError) {
 
 window.location.href =
     `ballot.html?id=${encodeURIComponent(ballotId)}` +
-    `&interest=${encodeURIComponent(interest || "")}`
+    `&interest=${encodeURIComponent(interest || "")}`;
 
 return true;
 
