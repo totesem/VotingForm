@@ -1,6 +1,10 @@
 const params = new URLSearchParams(window.location.search);
 
 const ballotId = params.get("id");
+
+document.getElementById("resultsLink").href =
+    `results.html?id=${encodeURIComponent(ballotId)}`;
+
 const invitationToken = params.get("invite");
 
 document.getElementById("ballotName").textContent =

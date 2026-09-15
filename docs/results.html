@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Ballot Results</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        #ballotName {
+            margin-bottom: 30px;
+        }
+
+        .result {
+            margin: 20px 0;
+        }
+
+        .label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .bar {
+            width: 100%;
+            height: 25px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .fill {
+            height: 100%;
+            width: 0%;
+        }
+
+        .yes {
+            background: #4caf50;
+        }
+
+        .no {
+            background: #f44336;
+        }
+
+        .abstain {
+            background: #999;
+        }
+
+        #total {
+            margin-top: 30px;
+            font-weight: bold;
+        }
+
+        #updated {
+            margin-top: 25px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Ballot Results</h1>
+
+    <div id="ballotName"></div>
+
+    <div id="results">
+        Loading results...
+    </div>
+
+    <div id="total"></div>
+
+    <div id="updated"></div>
+
+    <script>
+        const SUPABASE_URL = "https://ndqegqcxiuhkcpdxcpmw.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_6ByZ7sseW219S8Zlcz2GBg_z0n7140n";
+
+        const supabaseClient =
+            window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_ANON_KEY
+            );
+
+        const params = new URLSearchParams(window.location.search);
+        const ballotId = params.get("id");
+
+        document.getElementById("ballotName").textContent =
+            ballotId
+                ? `Ballot: ${ballotId}`
+                : "No ballot specified";
+
+
+        async function loadResults() {
+
+            if (!ballotId) {
+                document.getElementById("results").textContent =
+                    "No ballot specified.";
+                return;
+            }
+
+            const { data, error } =
+                await supabaseClient
+                    .from("responses")
+                    .select("vote")
+                    .eq("ballot_id", ballotId);
+
+            if (error) {
+                console.error(error);
+
+                document.getElementById("results").textContent =
+                    "Could not load results.";
+
+                return;
+            }
+
+            const total = data.length;
+
+            const yes =
+                data.filter(r => r.vote === "Yes").length;
+
+            const no =
+                data.filter(r => r.vote === "No").length;
+
+            const abstain =
+                data.filter(r => r.vote === "Abstain").length;
+
+
+            const yesPercent =
+                total ? (yes / total) * 100 : 0;
+
+            const noPercent =
+                total ? (no / total) * 100 : 0;
+
+            const abstainPercent =
+                total ? (abstain / total) * 100 : 0;
+
+
+            document.getElementById("results").innerHTML = `
+
+                <div class="result">
+
+                    <div class="label">
+                        <span>Yes</span>
+                        <span>${yes} (${yesPercent.toFixed(1)}%)</span>
+                    </div>
+
+                    <div class="bar">
+                        <div
+                            class="fill yes"
+                            style="width:${yesPercent}%">
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="result">
+
+                    <div class="label">
+                        <span>No</span>
+                        <span>${no} (${noPercent.toFixed(1)}%)</span>
+                    </div>
+
+                    <div class="bar">
+                        <div
+                            class="fill no"
+                            style="width:${noPercent}%">
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="result">
+
+                    <div class="label">
+                        <span>Abstain</span>
+                        <span>${abstain} (${abstainPercent.toFixed(1)}%)</span>
+                    </div>
+
+                    <div class="bar">
+                        <div
+                            class="fill abstain"
+                            style="width:${abstainPercent}%">
+                        </div>
+                    </div>
+
+                </div>
+            `;
+
+            document.getElementById("total").textContent =
+                `Total votes: ${total}`;
+
+            document.getElementById("updated").textContent =
+                `Updated: ${new Date().toLocaleTimeString()}`;
+        }
+
+
+        loadResults();
+
+        // Refresh every 10 seconds
+        setInterval(loadResults, 10000);
+
+    </script>
+
+</body>
+</html>
