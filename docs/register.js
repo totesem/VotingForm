@@ -246,6 +246,7 @@ const { error: voterError } =
     await supabaseClient
         .from("voters")
         .update({
+            name: nameInput.value.trim(),
             account_email: email,
             supabase_user_id: userId
         })
