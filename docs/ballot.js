@@ -82,6 +82,12 @@ createAlternateButton.addEventListener(
             alternateMessage.textContent =
                 `Alternate invitation created for ${result.email}.`;
 
+            document.getElementById("alternateLink").value =
+                result.registration_url;
+
+            document.getElementById("alternateLinkArea").style.display =
+                "block";
+
         } catch (error) {
 
             console.error(
@@ -96,6 +102,21 @@ createAlternateButton.addEventListener(
         }
     }
 );
+
+document.getElementById("copyAlternateLink")
+    .addEventListener(
+        "click",
+        async function () {
+
+            const link =
+                document.getElementById("alternateLink").value;
+
+            await navigator.clipboard.writeText(link);
+
+            alternateMessage.textContent =
+                "Alternate registration link copied.";
+        }
+    );
 
 document.getElementById("resultsLink").href =
     `results.html?id=${encodeURIComponent(ballotId)}`;

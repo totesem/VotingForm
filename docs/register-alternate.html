@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VotingForm Alternate Registration</title>
+</head>
+
+<body>
+
+<h1>VotingForm</h1>
+
+<p id="status">Checking your invitation...</p>
+
+<div id="registration" style="display:none;">
+
+    <h2>Register as an Alternate</h2>
+
+    <p id="invitedEmail"></p>
+
+    <div id="nameArea">
+
+        <label>
+            Name (First Last):
+            <br>
+            <input type="text" id="name" required>
+        </label>
+
+        <br><br>
+
+    </div>
+
+    <label>
+        Email for your ballot account:
+        <br>
+        <input type="email" id="email" required>
+    </label>
+
+    <br><br>
+
+    <label>
+        Password:
+        <br>
+        <input type="password" id="password" required>
+    </label>
+
+    <br><br>
+
+    <label>
+        Confirm Password:
+        <br>
+        <input type="password" id="confirmPassword" required>
+    </label>
+
+    <br><br>
+
+    <button type="button" id="createAccount" disabled>
+        Create Account
+    </button>
+
+</div>
+
+<p id="message"></p>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+    const SUPABASE_URL =
+        "https://ndqegqcxiuhkcpdxcpmw.supabase.co";
+
+    const SUPABASE_KEY =
+        "sb_publishable_6ByZ7sseW219S8Zlcz2GBg_z0n7140n";
+
+    const supabaseClient =
+        window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_KEY
+        );
+</script>
+
+<script src="register-alternate.js"></script>
+
+</body>
+</html>
