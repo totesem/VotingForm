@@ -4,6 +4,20 @@ const ballotId = params.get("id");
 
 const interest = params.get("interest");
 
+const alternateEmailInput =
+    document.getElementById("alternateEmail");
+
+const createAlternateButton =
+    document.getElementById("createAlternate");
+
+alternateEmailInput.addEventListener(
+    "input",
+    function () {
+        createAlternateButton.disabled =
+            !alternateEmailInput.value.trim();
+    }
+);
+
 document.getElementById("resultsLink").href =
     `results.html?id=${encodeURIComponent(ballotId)}`;
 
