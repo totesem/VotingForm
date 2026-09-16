@@ -47,30 +47,24 @@ async function checkInvitation() {
         return;
     }
 
-    const { data, error } =
-        await supabaseClient
-            .from("ballot_alternates")
-            .select(
-                "id, ballot_id, name, email, supabase_user_id, used_at"
-            )
-            .eq(
-                "invitation_token",
-                invitationToken
-            )
-            .maybeSingle();
+    const response =
+    await fetch(
+        `${SUPABASE_URL}/functions/v1/check-alternate?invite=${encodeURIComponent(invitationToken)}`
+    );
 
-    if (error) {
+    const data =
+        await response.json();
 
-        console.error(
-            "Alternate invitation lookup error:",
-            error
-        );
+    if (!response.ok) {
 
         status.textContent =
-            "Could not verify your invitation.";
+            data.error ||
+            "This invitation is not valid.";
 
         return;
     }
+
+    alternate = data;
 
     if (!data) {
 
