@@ -125,6 +125,64 @@ message.textContent =
 checkAuthentication();
 
 // --------------------------------------------------
+// Load existing vote
+// --------------------------------------------------
+
+async function loadExistingVote() {
+
+    const {
+        data: { session },
+        error: sessionError
+    } = await supabaseClient.auth.getSession();
+
+    if (sessionError || !session) {
+        return;
+    }
+
+    const { data: existingVote, error } =
+        await supabaseClient
+            .from("votes")
+            .select("vote, comment")
+            .eq("ballot_id", ballotId)
+            .eq("supabase_user_id", session.user.id)
+            .maybeSingle();
+
+    if (error) {
+        console.error(
+            "Existing vote lookup error:",
+            error
+        );
+        return;
+    }
+
+    if (!existingVote) {
+        return;
+    }
+
+    // Select existing vote
+
+    const voteInput =
+        document.querySelector(
+            `input[name="vote"][value="${existingVote.vote}"]`
+        );
+
+    if (voteInput) {
+        voteInput.checked = true;
+    }
+
+    // Load existing comment
+
+    document.getElementById("comment").value =
+        existingVote.comment || "";
+
+}
+
+
+// Load existing vote
+
+loadExistingVote();
+
+// --------------------------------------------------
 // Submit vote
 // --------------------------------------------------
 
