@@ -32,6 +32,7 @@ const message =
     document.getElementById("message");
 
 let alternate = null;
+let existingAccount = false;
 
 // --------------------------------------------------
 // Check invitation
@@ -74,14 +75,43 @@ async function checkInvitation() {
 
         alternate = data;
 
+        existingAccount =
+            data.existing_account;
+
         invitedEmail.textContent =
             `Invitation for: ${alternate.email}`;
 
         emailInput.value =
             alternate.email;
 
-        status.textContent =
-            "Create your ballot account.";
+        if (existingAccount) {
+
+            status.textContent =
+                "Sign in to access your ballot.";
+
+            button.textContent =
+                "Sign In";
+
+            nameInput.parentElement.parentElement.style.display =
+                "none";
+
+            confirmPasswordInput.parentElement.parentElement.style.display =
+                "none";
+
+        } else {
+
+            status.textContent =
+                "Create your ballot account.";
+
+            button.textContent =
+                "Create Account";
+
+            nameInput.parentElement.parentElement.style.display =
+                "block";
+
+            confirmPasswordInput.parentElement.parentElement.style.display =
+                "block";
+        }
 
         registration.style.display =
             "block";
@@ -106,14 +136,23 @@ async function checkInvitation() {
 
 function updateButton() {
 
-    const name =
-        nameInput.value.trim();
-
     const email =
         emailInput.value.trim();
 
     const password =
         passwordInput.value;
+
+    if (existingAccount) {
+
+        button.disabled =
+            !email ||
+            !password;
+
+        return;
+    }
+
+    const name =
+        nameInput.value.trim();
 
     const confirmPassword =
         confirmPasswordInput.value;
@@ -146,9 +185,8 @@ confirmPasswordInput.addEventListener(
     updateButton
 );
 
-
 // --------------------------------------------------
-// Create account
+// Create account / Sign in
 // --------------------------------------------------
 
 button.addEventListener(
@@ -158,7 +196,9 @@ button.addEventListener(
         button.disabled = true;
 
         message.textContent =
-            "Creating your account...";
+            existingAccount
+                ? "Signing in..."
+                : "Creating your account...";
 
         const name =
             nameInput.value.trim();
@@ -171,35 +211,67 @@ button.addEventListener(
 
         try {
 
-            const { data, error } =
-                await supabaseClient.auth.signUp({
-                    email: email,
-                    password: password
-                });
+            let user = null;
 
-            if (error) {
+            if (existingAccount) {
 
-                console.error(
-                    "Account creation error:",
-                    error
-                );
+                const { data, error } =
+                    await supabaseClient.auth.signInWithPassword({
+                        email: email,
+                        password: password
+                    });
 
-                message.textContent =
-                    `Account creation error: ${error.message}`;
+                if (error) {
 
-                button.disabled = false;
+                    console.error(
+                        "Sign-in error:",
+                        error
+                    );
 
-                return;
-            }
+                    message.textContent =
+                        `Sign-in error: ${error.message}`;
 
-            if (!data.user) {
+                    button.disabled = false;
 
-                message.textContent =
-                    "The account could not be created.";
+                    return;
+                }
 
-                button.disabled = false;
+                user = data.user;
 
-                return;
+            } else {
+
+                const { data, error } =
+                    await supabaseClient.auth.signUp({
+                        email: email,
+                        password: password
+                    });
+
+                if (error) {
+
+                    console.error(
+                        "Account creation error:",
+                        error
+                    );
+
+                    message.textContent =
+                        `Account creation error: ${error.message}`;
+
+                    button.disabled = false;
+
+                    return;
+                }
+
+                if (!data.user) {
+
+                    message.textContent =
+                        "The account could not be created.";
+
+                    button.disabled = false;
+
+                    return;
+                }
+
+                user = data.user;
             }
 
             const {
@@ -211,7 +283,9 @@ button.addEventListener(
             if (!session) {
 
                 message.textContent =
-                    "Your account was created, but you could not be signed in.";
+                    "Your account could not be authenticated.";
+
+                button.disabled = false;
 
                 return;
             }
@@ -228,7 +302,9 @@ button.addEventListener(
                         },
                         body: JSON.stringify({
                             invitation_id: alternate.id,
-                            name: name,
+                            name: existingAccount
+                                ? null
+                                : name,
                             email: email
                         })
                     }
@@ -247,7 +323,9 @@ button.addEventListener(
 
                 message.textContent =
                     result.error ||
-                    "Your account was created, but your alternate registration could not be completed.";
+                    "Your alternate registration could not be completed.";
+
+                button.disabled = false;
 
                 return;
             }
