@@ -92,10 +92,10 @@ async function checkInvitation() {
             button.textContent =
                 "Sign In";
 
-            nameInput.parentElement.parentElement.style.display =
+            document.getElementById("nameArea").style.display =
                 "none";
 
-            confirmPasswordInput.parentElement.parentElement.style.display =
+            document.getElementById("confirmPasswordArea").style.display =
                 "none";
 
         } else {
@@ -106,10 +106,10 @@ async function checkInvitation() {
             button.textContent =
                 "Create Account";
 
-            nameInput.parentElement.parentElement.style.display =
+            document.getElementById("nameArea").style.display =
                 "block";
 
-            confirmPasswordInput.parentElement.parentElement.style.display =
+            document.getElementById("confirmPasswordArea").style.display =
                 "block";
         }
 
