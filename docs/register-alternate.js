@@ -202,33 +202,52 @@ button.addEventListener(
                 return;
             }
 
-            const { error: updateError } =
-                await supabaseClient
-                    .from("ballot_alternates")
-                    .update({
-                        name: name,
-                        email: email,
-                        supabase_user_id:
-                            data.user.id,
-                        used_at:
-                            new Date().toISOString()
-                    })
-                    .eq(
-                        "id",
-                        alternate.id
-                    );
+            const {
+                data: {
+                    session
+                }
+            } = await supabaseClient.auth.getSession();
 
-            if (updateError) {
-
-                console.error(
-                    "Alternate update error:",
-                    updateError
-                );
+            if (!session) {
 
                 message.textContent =
-                    "Your account was created, but your alternate invitation could not be completed.";
+                    "Your account was created, but you could not be signed in.";
 
-                button.disabled = false;
+                return;
+            }
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/functions/v1/complete-alternate`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization":
+                                `Bearer ${session.access_token}`
+                        },
+                        body: JSON.stringify({
+                            invitation_id: alternate.id,
+                            name: name,
+                            email: email
+                        })
+                    }
+                );
+
+            const result =
+                await response.json();
+
+            console.log(
+                "complete-alternate response:",
+                response.status,
+                result
+            );
+
+            if (!response.ok) {
+
+                message.textContent =
+                    result.error ||
+                    "Your account was created, but your alternate registration could not be completed.";
 
                 return;
             }
