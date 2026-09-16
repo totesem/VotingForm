@@ -47,58 +47,58 @@ async function checkInvitation() {
         return;
     }
 
-    const response =
-    await fetch(
-        `${SUPABASE_URL}/functions/v1/check-alternate?invite=${encodeURIComponent(invitationToken)}`
-    );
+    try {
 
-    const data =
-        await response.json();
+        const response =
+            await fetch(
+                `${SUPABASE_URL}/functions/v1/check-alternate?invite=${encodeURIComponent(invitationToken)}`
+            );
 
-    if (!response.ok) {
+        const data =
+            await response.json();
+
+        console.log(
+            "check-alternate response:",
+            response.status,
+            data
+        );
+
+        if (!response.ok) {
+
+            status.textContent =
+                data.error ||
+                "This invitation is not valid.";
+
+            return;
+        }
+
+        alternate = data;
+
+        invitedEmail.textContent =
+            `Invitation for: ${alternate.email}`;
+
+        emailInput.value =
+            alternate.email;
 
         status.textContent =
-            data.error ||
-            "This invitation is not valid.";
+            "Create your ballot account.";
 
-        return;
-    }
+        registration.style.display =
+            "block";
 
-    alternate = data;
+        updateButton();
 
-    if (!data) {
+    } catch (error) {
 
-        status.textContent =
-            "This invitation is not valid.";
-
-        return;
-    }
-
-    alternate = data;
-
-    if (alternate.used_at) {
+        console.error(
+            "Alternate invitation error:",
+            error
+        );
 
         status.textContent =
-            "This alternate invitation has already been used.";
-
-        return;
+            "Could not verify your invitation.";
     }
-
-    invitedEmail.textContent =
-        `Invitation for: ${alternate.email}`;
-
-    emailInput.value =
-        alternate.email;
-
-    status.textContent =
-        "Create your ballot account.";
-
-    registration.style.display =
-        "block";
-
-    updateButton();
 }
-
 
 // --------------------------------------------------
 // Button validation
