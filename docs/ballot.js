@@ -335,6 +335,8 @@ async function loadExistingVote() {
         existingVote.comment || "";
 }
 
+loadExistingVote();
+
 // --------------------------------------------------
 // Submit vote
 // --------------------------------------------------
