@@ -18,6 +18,82 @@ alternateEmailInput.addEventListener(
     }
 );
 
+createAlternateButton.addEventListener(
+    "click",
+    async function () {
+
+        const {
+            data: { session }
+        } = await supabaseClient.auth.getSession();
+
+        if (!session) {
+            alternateMessage.textContent =
+                "You must be signed in to use an alternate.";
+
+            return;
+        }
+
+        createAlternateButton.disabled = true;
+
+        alternateMessage.textContent =
+            "Creating alternate invitation...";
+
+        try {
+
+            const response =
+                await fetch(
+                    `${SUPABASE_URL}/functions/v1/create-alternate`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization":
+                                `Bearer ${session.access_token}`
+                        },
+                        body: JSON.stringify({
+                            ballot_id: ballotId,
+                            alternate_email:
+                                alternateEmailInput.value.trim()
+                        })
+                    }
+                );
+
+            const result =
+                await response.json();
+
+            console.log(
+                "create-alternate response:",
+                response.status,
+                result
+            );
+
+            if (!response.ok) {
+                alternateMessage.textContent =
+                    result.error ||
+                    "Could not create alternate invitation.";
+
+                createAlternateButton.disabled = false;
+                return;
+            }
+
+            alternateMessage.textContent =
+                `Alternate invitation created for ${result.email}.`;
+
+        } catch (error) {
+
+            console.error(
+                "Alternate invitation error:",
+                error
+            );
+
+            alternateMessage.textContent =
+                "There was a problem creating the alternate invitation.";
+
+            createAlternateButton.disabled = false;
+        }
+    }
+);
+
 document.getElementById("resultsLink").href =
     `results.html?id=${encodeURIComponent(ballotId)}`;
 
