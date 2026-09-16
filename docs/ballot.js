@@ -253,27 +253,74 @@ async function loadExistingVote() {
         return;
     }
 
+    // The vote normally belongs to the signed-in user.
+    let voteUserId = session.user.id;
+
+    // Check whether this user is an alternate for this ballot.
+    const { data: alternate, error: alternateError } =
+        await supabaseClient
+            .from("ballot_alternates")
+            .select("original_voter_id")
+            .eq("ballot_id", ballotId)
+            .eq("supabase_user_id", session.user.id)
+            .maybeSingle();
+
+    if (alternateError) {
+
+        console.error(
+            "Alternate lookup error:",
+            alternateError
+        );
+
+        return;
+    }
+
+    // If this is an alternate, find the original voter's
+    // Supabase user ID and use that to find the vote.
+    if (alternate) {
+
+        const { data: originalVoter, error: originalVoterError } =
+            await supabaseClient
+                .from("voters")
+                .select("supabase_user_id")
+                .eq("id", alternate.original_voter_id)
+                .maybeSingle();
+
+        if (originalVoterError || !originalVoter) {
+
+            console.error(
+                "Original voter lookup error:",
+                originalVoterError
+            );
+
+            return;
+        }
+
+        voteUserId =
+            originalVoter.supabase_user_id;
+    }
+
     const { data: existingVote, error } =
         await supabaseClient
             .from("votes")
             .select("vote, comment")
             .eq("ballot_id", ballotId)
-            .eq("supabase_user_id", session.user.id)
+            .eq("supabase_user_id", voteUserId)
             .maybeSingle();
 
     if (error) {
+
         console.error(
             "Existing vote lookup error:",
             error
         );
+
         return;
     }
 
     if (!existingVote) {
         return;
     }
-
-    // Select existing vote
 
     const voteInput =
         document.querySelector(
@@ -284,17 +331,9 @@ async function loadExistingVote() {
         voteInput.checked = true;
     }
 
-    // Load existing comment
-
     document.getElementById("comment").value =
         existingVote.comment || "";
-
 }
-
-
-// Load existing vote
-
-loadExistingVote();
 
 // --------------------------------------------------
 // Submit vote
