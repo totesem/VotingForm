@@ -103,12 +103,12 @@ const { data: voter, error: voterError } =
     invitation.supabase_user_id
         ? await supabaseClient
             .from("voters")
-            .select("roster_email_1, account_email, supabase_user_id")
+            .select("name, roster_email_1, account_email, supabase_user_id")
             .eq("supabase_user_id", invitation.supabase_user_id)
             .single()
         : await supabaseClient
             .from("voters")
-            .select("roster_email_1, account_email, supabase_user_id")
+            .select("name, roster_email_1, account_email, supabase_user_id")
             .eq("sharepoint_id", voterId)
             .single();
 
@@ -154,6 +154,9 @@ if (existingAccount) {
     confirmPasswordArea.style.display =
         "none";
 
+    document.getElementById("nameArea").style.display =
+        "none";
+
 } else {
 
     status.textContent =
@@ -163,6 +166,9 @@ if (existingAccount) {
         "Create Account";
 
     confirmPasswordArea.style.display =
+        "block";
+
+    document.getElementById("nameArea").style.display =
         "block";
 }
 
