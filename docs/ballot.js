@@ -10,6 +10,9 @@ const alternateEmailInput =
 const createAlternateButton =
     document.getElementById("createAlternate");
 
+const alternateMessage =
+    document.getElementById("alternateMessage");
+
 alternateEmailInput.addEventListener(
     "input",
     function () {
