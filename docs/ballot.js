@@ -27,14 +27,12 @@ const switchButton = document.getElementById("switchAccount");
 
 const {
     data: { session },
-    error: sessionError
-} = await supabaseClient.auth.refreshSession();
+    error
+} = await supabaseClient.auth.getSession();
 
-if (sessionError || !session) {
-
-    message.textContent =
-        "You must register or sign in to vote.";
-
+if (error) {
+    console.error(error);
+    message.textContent = "Supabase connection error.";
     return;
 }
 
