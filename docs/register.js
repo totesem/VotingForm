@@ -14,6 +14,9 @@ document.getElementById("registration");
 const invitedEmail =
 document.getElementById("invitedEmail");
 
+const nameInput =
+document.getElementById("name");
+
 const emailInput =
 document.getElementById("email");
 
@@ -186,6 +189,9 @@ function updateButton() {
 const email =
     emailInput.value.trim();
 
+const name =
+    nameInput.value.trim();
+
 const password =
     passwordInput.value;
 
@@ -202,6 +208,7 @@ const confirmPassword =
     confirmPasswordInput.value;
 
 button.disabled =
+    !name ||
     !email ||
     !password ||
     !confirmPassword ||
