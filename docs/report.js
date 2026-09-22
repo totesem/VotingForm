@@ -60,14 +60,52 @@ async function loadReport() {
     try {
 
         // ------------------------------------------
-        // Get voters
+// Get voters authorized for this ballot
+// ------------------------------------------
+
+        const { data: invitations, error: invitationError } =
+            await supabaseClient
+                .from("auth_guids")
+                .select("voter_id")
+                .eq("ballot_id", ballotId);
+
+        if (invitationError) {
+
+            console.error(
+                "Invitation lookup error:",
+                invitationError
+            );
+
+            message.textContent =
+                "Could not determine voters for this ballot.";
+
+            return;
+        }
+
+
+        // Get the SharePoint IDs for this ballot
+
+        const ballotVoterIds =
+            [...new Set(
+                invitations.map(
+                    invitation => String(invitation.voter_id)
+                )
+            )];
+
+
+        // ------------------------------------------
+        // Get those voters
         // ------------------------------------------
 
         const { data: voters, error: voterError } =
             await supabaseClient
                 .from("voters")
                 .select(
-                    "id, name, account_email, roster_email_1, interest_category, supabase_user_id"
+                    "id, name, account_email, roster_email_1, interest_category, supabase_user_id, sharepoint_id"
+                )
+                .in(
+                    "sharepoint_id",
+                    ballotVoterIds
                 )
                 .not(
                     "supabase_user_id",
