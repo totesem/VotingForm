@@ -355,12 +355,12 @@ async function loadReport() {
 
 
                 const yesPercent =
-                    totalVotes > 0
+                    category.voters > 0
                     ? (
                         category.yes /
-                        totalVotes *
+                        category.voters *
                         100
-                    ).toFixed(1)
+                    ).toFixed(1) + "%"
                     : "#DIV/0!";
 
 
@@ -431,13 +431,13 @@ async function loadReport() {
 
 
         const totalYesPercent =
-            totalVotes > 0
+            totalVoters > 0
             ? (
                 totalYes /
-                totalVotes *
+                totalVoters *
                 100
-            ).toFixed(1)
-            : "0.0";
+            ).toFixed(1) + "%"
+            : "#DIV/0!";
 
 
         const totalRow =
@@ -470,8 +470,8 @@ async function loadReport() {
         summaryBody.appendChild(totalRow);
 
 
-        message.textContent =
-            `Report loaded for ${ballotId}.`;
+       //message.textContent =
+        //    `Report loaded for ${ballotId}.`;
 
 
     } catch (error) {
