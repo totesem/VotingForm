@@ -160,6 +160,53 @@ async function loadReport() {
             return;
         }
 
+        // ------------------------------------------
+        // Get alternates for this ballot
+        // ------------------------------------------
+
+        const { data: alternates, error: alternateError } =
+            await supabaseClient
+                .from("ballot_alternates")
+                .select(
+                    "original_voter_id, name, email, used_at"
+                )
+                .eq(
+                    "ballot_id",
+                    ballotId
+                )
+                .not(
+                    "used_at",
+                    "is",
+                    null
+                );
+
+        if (alternateError) {
+
+            console.error(
+                "Alternate lookup error:",
+                alternateError
+            );
+
+            message.textContent =
+                "Could not load alternate voting information.";
+
+            return;
+        }
+
+        // ------------------------------------------
+        // Build alternate lookup
+        // ------------------------------------------
+
+        const alternateMap = new Map();
+
+        alternates.forEach(function (alternate) {
+
+            alternateMap.set(
+                alternate.original_voter_id,
+                alternate
+            );
+
+        });   
 
         // ------------------------------------------
         // Build vote lookup
@@ -192,6 +239,9 @@ async function loadReport() {
                 );
 
 
+            const alternate =
+    alternateMap.get(voter.id);
+
             rows.push({
 
                 name:
@@ -211,7 +261,12 @@ async function loadReport() {
                     vote ? vote.vote : "",
 
                 comment:
-                    vote ? vote.comment : ""
+                    vote ? vote.comment : "",
+
+                note:
+                    alternate
+                    ? `Alternate vote cast by ${alternate.name || alternate.email}`
+                    : ""
 
             });
 
@@ -268,6 +323,12 @@ async function loadReport() {
 
             commentCell.textContent =
                 row.comment || "";
+            
+            const noteCell =
+                document.createElement("td");
+
+            noteCell.textContent =
+                row.note || "";
 
 
             tr.appendChild(nameCell);
@@ -275,6 +336,7 @@ async function loadReport() {
             tr.appendChild(interestCell);
             tr.appendChild(voteCell);
             tr.appendChild(commentCell);
+            tr.appendChild(noteCell);
 
 
             voterBody.appendChild(tr);
