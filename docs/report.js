@@ -436,7 +436,7 @@ async function loadReport() {
                 totalYes /
                 totalVoters *
                 100
-            ).toFixed(1)
+            ).toFixed(1) + "%"
             : "#DIV/0!";
 
 
