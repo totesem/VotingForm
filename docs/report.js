@@ -54,8 +54,8 @@ if (!ballotId) {
 
 async function loadReport() {
 
-    message.textContent =
-        "Loading report...";
+    //message.textContent =
+     //   "Loading report...";
 
     try {
 
