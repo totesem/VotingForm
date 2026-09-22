@@ -8,6 +8,15 @@ const ballotName = document.getElementById("ballotName");
 const summaryBody = document.getElementById("summaryBody");
 const voterBody = document.getElementById("voterBody");
 
+const interestNames = {
+    "P": "Producer",
+    "U": "User",
+    "G": "General",
+    "T": "Tester",
+    "A": "Architect Engineer",
+    "R": "Regulatory/Government"
+};
+
 
 // --------------------------------------------------
 // Supabase
@@ -194,6 +203,7 @@ async function loadReport() {
                     "",
 
                 interest:
+                    interestNames[voter.interest_category] ||
                     voter.interest_category ||
                     "",
 
