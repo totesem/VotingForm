@@ -332,6 +332,10 @@ async function loadReport() {
         });
 
 
+        // ------------------------------------------
+        // Display category summary
+        // ------------------------------------------
+
         Object.keys(categories)
             .sort()
             .forEach(function (interest) {
@@ -344,29 +348,20 @@ async function loadReport() {
                     document.createElement("tr");
 
 
-                const participation =
-                    category.voters > 0
-                    ? (
-                        category.voted /
-                        category.voters *
-                        100
-                    ).toFixed(1)
-                    : "0.0";
-
-
-                const yesTotal =
+                const totalVotes =
                     category.yes +
-                    category.no;
+                    category.no +
+                    category.abstain;
 
 
                 const yesPercent =
-                    yesTotal > 0
+                    totalVotes > 0
                     ? (
                         category.yes /
-                        yesTotal *
+                        totalVotes *
                         100
                     ).toFixed(1)
-                    : "0.0";
+                    : "#DIV/0!";
 
 
                 tr.innerHTML = `
@@ -389,14 +384,90 @@ async function loadReport() {
 
                     <td>${yesPercent}%</td>
 
-                    <td>${participation}%</td>
-
                 `;
 
 
                 summaryBody.appendChild(tr);
 
             });
+
+
+        // ------------------------------------------
+        // Vote Total
+        // ------------------------------------------
+
+        let totalVoters = 0;
+        let totalVoted = 0;
+        let totalYes = 0;
+        let totalNo = 0;
+        let totalAbstain = 0;
+
+
+        Object.values(categories)
+            .forEach(function (category) {
+
+                totalVoters +=
+                    category.voters;
+
+                totalVoted +=
+                    category.voted;
+
+                totalYes +=
+                    category.yes;
+
+                totalNo +=
+                    category.no;
+
+                totalAbstain +=
+                    category.abstain;
+
+            });
+
+
+        const totalVotes =
+            totalYes +
+            totalNo +
+            totalAbstain;
+
+
+        const totalYesPercent =
+            totalVotes > 0
+            ? (
+                totalYes /
+                totalVotes *
+                100
+            ).toFixed(1)
+            : "0.0";
+
+
+        const totalRow =
+            document.createElement("tr");
+
+
+        totalRow.innerHTML = `
+
+            <td><strong>Vote Total</strong></td>
+
+            <td><strong>${totalVoters}</strong></td>
+
+            <td><strong>${totalVoted}</strong></td>
+
+            <td>
+                <strong>${totalVoters - totalVoted}</strong>
+            </td>
+
+            <td><strong>${totalYes}</strong></td>
+
+            <td><strong>${totalNo}</strong></td>
+
+            <td><strong>${totalAbstain}</strong></td>
+
+            <td><strong>${totalYesPercent}%</strong></td>
+
+        `;
+
+
+        summaryBody.appendChild(totalRow);
 
 
         message.textContent =
