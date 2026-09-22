@@ -360,7 +360,7 @@ async function loadReport() {
                         category.yes /
                         category.voters *
                         100
-                    ).toFixed(1)
+                    ).toFixed(1) + "%"
                     : "#DIV/0!";
 
 
@@ -430,14 +430,31 @@ async function loadReport() {
             totalAbstain;
 
 
-        const totalYesPercent =
+        const totalYesPercentValue =
             totalVoters > 0
             ? (
                 totalYes /
                 totalVoters *
                 100
-            ).toFixed(1) + "%"
+            )
+            : null;
+
+        const totalYesPercent =
+            totalYesPercentValue !== null
+            ? totalYesPercentValue.toFixed(1) + "%"
             : "#DIV/0!";
+
+        const totalYesClass =
+            totalYesPercentValue !== null &&
+            totalYesPercentValue > 50
+            ? "pass"
+            : "fail";
+
+        const totalYesTitle =
+            totalYesPercentValue !== null &&
+            totalYesPercentValue > 50
+            ? "Pass"
+            : "Fail";
 
 
         const totalRow =
@@ -462,7 +479,12 @@ async function loadReport() {
 
             <td><strong>${totalAbstain}</strong></td>
 
-            <td><strong>${totalYesPercent}</strong></td>
+            <td
+                class="${totalYesClass}"
+                title="${totalYesTitle}"
+            >
+                <strong>${totalYesPercent}</strong>
+</td>
 
         `;
 
