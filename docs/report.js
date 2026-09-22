@@ -462,7 +462,7 @@ async function loadReport() {
 
             <td><strong>${totalAbstain}</strong></td>
 
-            <td><strong>${totalYesPercent}%</strong></td>
+            <td><strong>${totalYesPercent}</strong></td>
 
         `;
 
