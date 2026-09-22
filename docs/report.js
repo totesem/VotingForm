@@ -360,7 +360,7 @@ async function loadReport() {
                         category.yes /
                         category.voters *
                         100
-                    ).toFixed(1) + "%"
+                    ).toFixed(1)
                     : "#DIV/0!";
 
 
@@ -382,7 +382,7 @@ async function loadReport() {
 
                     <td>${category.abstain}</td>
 
-                    <td>${yesPercent}%</td>
+                    <td>${yesPercent}</td>
 
                 `;
 
@@ -436,7 +436,7 @@ async function loadReport() {
                 totalYes /
                 totalVoters *
                 100
-            ).toFixed(1) + "%"
+            ).toFixed(1)
             : "#DIV/0!";
 
 
