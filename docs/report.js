@@ -59,15 +59,16 @@ async function loadReport() {
 
     try {
 
-        // ------------------------------------------
+// ------------------------------------------
 // Get voters authorized for this ballot
 // ------------------------------------------
 
         const { data: invitations, error: invitationError } =
             await supabaseClient
                 .from("auth_guids")
-                .select("voter_id")
-                .eq("ballot_id", ballotId);
+                .select("supabase_user_id")
+                .eq("ballot_id", ballotId)
+                .not("supabase_user_id", "is", null);
 
         if (invitationError) {
 
@@ -83,12 +84,12 @@ async function loadReport() {
         }
 
 
-        // Get the SharePoint IDs for this ballot
+        // Get the Supabase user IDs authorized for this ballot
 
-        const ballotVoterIds =
+        const ballotUserIds =
             [...new Set(
                 invitations.map(
-                    invitation => String(invitation.voter_id)
+                    invitation => invitation.supabase_user_id
                 )
             )];
 
@@ -101,16 +102,11 @@ async function loadReport() {
             await supabaseClient
                 .from("voters")
                 .select(
-                    "id, name, account_email, roster_email_1, interest_category, supabase_user_id, sharepoint_id"
+                    "id, name, account_email, roster_email_1, interest_category, supabase_user_id"
                 )
                 .in(
-                    "sharepoint_id",
-                    ballotVoterIds
-                )
-                .not(
                     "supabase_user_id",
-                    "is",
-                    null
+                    ballotUserIds
                 );
 
         if (voterError) {
