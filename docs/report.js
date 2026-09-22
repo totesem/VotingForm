@@ -193,6 +193,8 @@ async function loadReport() {
             return;
         }
 
+        console.log("ALTERNATES FOUND:", alternates);
+
         // ------------------------------------------
         // Build alternate lookup
         // ------------------------------------------
