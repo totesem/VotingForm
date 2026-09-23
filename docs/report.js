@@ -164,6 +164,37 @@ async function loadReport() {
         // Get alternates for this ballot
         // ------------------------------------------
 
+      //  const { data: alternates, error: alternateError } =
+       //     await supabaseClient
+        //        .from("ballot_alternates")
+         //       .select(
+          //          "original_voter_id, name, email, used_at"
+           //     )
+            //    .eq(
+             //       "ballot_id",
+              //      ballotId
+               // )
+                //.not(
+                 //   "used_at",
+                  //  "is",
+                   // null
+                //);
+
+        //if (alternateError) {
+
+        //    console.error(
+         //       "Alternate lookup error:",
+          //      alternateError
+           // );
+
+           // message.textContent =
+           //     "Could not load alternate voting information.";
+
+          //  return;
+       // }
+
+       // console.log("ALTERNATES FOUND:", alternates);
+
         const { data: alternates, error: alternateError } =
             await supabaseClient
                 .from("ballot_alternates")
@@ -192,8 +223,6 @@ async function loadReport() {
 
             return;
         }
-
-        console.log("ALTERNATES FOUND:", alternates);
 
         // ------------------------------------------
         // Build alternate lookup
@@ -245,6 +274,7 @@ async function loadReport() {
                 alternates.find(function (alternate) {
                     return String(alternate.original_voter_id) === String(voter.id);
                 });
+
 
             rows.push({
 
