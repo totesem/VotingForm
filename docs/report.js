@@ -242,7 +242,9 @@ async function loadReport() {
 
 
             const alternate =
-    alternateMap.get(voter.id);
+                alternates.find(function (alternate) {
+                    return String(alternate.original_voter_id) === String(voter.id);
+                });
 
             rows.push({
 
