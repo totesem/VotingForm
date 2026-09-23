@@ -18,6 +18,7 @@ const interestNames = {
 };
 
 
+
 // --------------------------------------------------
 // Supabase
 // --------------------------------------------------
@@ -39,22 +40,91 @@ const supabaseClient =
 // Check ballot
 // --------------------------------------------------
 
-if (!ballotId) {
+async function checkStaffAccess() {
 
-    ballotName.textContent =
-        "No ballot specified.";
+    const {
+        data: { session }
+    } = await supabaseClient.auth.getSession();
 
-    message.textContent =
-        "A ballot ID is required.";
+    if (!session || !session.user) {
 
-} else {
+        message.textContent =
+            "You must be signed in to view this report.";
+
+        return false;
+    }
+
+    const staffEmail =
+        session.user.email;
+
+    const { data: staffRecord, error: staffError } =
+        await supabaseClient
+            .from("staff")
+            .select("email")
+            .ilike("email", staffEmail)
+            .maybeSingle();
+
+    if (staffError) {
+
+        console.error(
+            "Staff lookup error:",
+            staffError
+        );
+
+        message.textContent =
+            "Could not verify report access.";
+
+        return false;
+    }
+
+    if (!staffRecord) {
+
+        message.textContent =
+            "You are not authorized to view this report.";
+
+        return false;
+    }
+
+    return true;
+}
+
+
+async function startReport() {
+
+    if (!ballotId) {
+
+        ballotName.textContent =
+            "No ballot specified.";
+
+        message.textContent =
+            "A ballot ID is required.";
+
+        return;
+    }
 
     ballotName.textContent =
         `Ballot: ${ballotId}`;
 
-    loadReport();
+    const isStaff =
+        await checkStaffAccess();
 
+    if (!isStaff) {
+        return;
+    }
+
+    document.getElementById("pdfButton").style.display =
+        "inline-block";
+
+    document.getElementById("pdfButton").onclick =
+        function () {
+            window.print();
+        };
+
+    await loadReport();
 }
+
+
+startReport();
 
 
 // --------------------------------------------------
@@ -64,7 +134,7 @@ if (!ballotId) {
 async function loadReport() {
 
     //message.textContent =
-     //   "Loading report...";
+       // "Loading report...";
 
     try {
 

@@ -83,6 +83,26 @@
             color: #9c0006;
         }
 
+        #pdfButton {
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        @media print {
+
+            #pdfButton,
+            #message {
+                display: none !important;
+            }
+
+            body {
+                margin: 20px;
+            }
+
+        }
+
     </style>
 
 </head>
@@ -94,6 +114,10 @@
     <div id="ballotName">
         Loading ballot...
     </div>
+
+    <button id="pdfButton" style="display:none;">
+        Save as PDF
+    </button>
 
     <div id="message"></div>
 
