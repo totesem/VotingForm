@@ -193,7 +193,6 @@ async function loadReport() {
           //  return;
        // }
 
-       // console.log("ALTERNATES FOUND:", alternates);
 
         const { data: alternates, error: alternateError } =
             await supabaseClient
@@ -223,6 +222,8 @@ async function loadReport() {
 
             return;
         }
+
+        console.log("ALTERNATES FOUND:", alternates);
 
         // ------------------------------------------
         // Build alternate lookup
