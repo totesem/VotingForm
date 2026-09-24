@@ -43,11 +43,10 @@ const supabaseClient =
 async function checkStaffAccess() {
 
     const {
-        data: { user },
-        error: userError
-    } = await supabaseClient.auth.getUser();
+        data: { session }
+    } = await supabaseClient.auth.getSession();
 
-    if (userError || !user) {
+    if (!session || !session.user) {
 
         message.textContent =
             "You must be signed in to view this report.";
@@ -55,21 +54,21 @@ async function checkStaffAccess() {
         return false;
     }
 
-    const email =
-        user.email;
+    const staffEmail =
+        session.user.email;
 
-    const { data, error } =
+    const { data: staffRecord, error: staffError } =
         await supabaseClient
             .from("staff")
             .select("email")
-            .eq("email", email)
-            .limit(1);
+            .ilike("email", staffEmail)
+            .maybeSingle();
 
-    if (error) {
+    if (staffError) {
 
         console.error(
-            "Staff access check failed:",
-            error
+            "Staff lookup error:",
+            staffError
         );
 
         message.textContent =
@@ -78,7 +77,7 @@ async function checkStaffAccess() {
         return false;
     }
 
-    if (!data || data.length === 0) {
+    if (!staffRecord) {
 
         message.textContent =
             "You are not authorized to view this report.";
@@ -106,32 +105,27 @@ async function startReport() {
     ballotName.textContent =
         `Ballot: ${ballotId}`;
 
-    const authorized =
+    const isStaff =
         await checkStaffAccess();
 
-    if (!authorized) {
+    if (!isStaff) {
         return;
     }
 
+    document.getElementById("pdfButton").style.display =
+        "inline-block";
+
+    document.getElementById("pdfButton").onclick =
+        function () {
+            window.print();
+        };
+
     await loadReport();
-
-    const pdfButton =
-        document.getElementById("pdfButton");
-
-    if (pdfButton) {
-
-        pdfButton.style.display =
-            "inline-block";
-
-        pdfButton.onclick =
-            function () {
-                window.print();
-            };
-    }
 }
 
 
 startReport();
+
 
 // --------------------------------------------------
 // Load report
