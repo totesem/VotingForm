@@ -144,7 +144,7 @@ async function loadReport() {
 
     try {
 
-        // ------------------------------------------
+                // ------------------------------------------
         // Get ballot dates
         // ------------------------------------------
 
@@ -168,131 +168,199 @@ async function loadReport() {
             return;
         }
 
+
+        const formatDate =
+            function (date) {
+
+                return date.toLocaleDateString(
+                    undefined,
+                    {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric"
+                    }
+                );
+
+            };
+
+
+        let originalStart;
+        let originalEnd;
+
+
+        // ------------------------------------------
+        // Ballot exists
+        // ------------------------------------------
+
         if (ballot) {
 
-            const originalStart =
+            originalStart =
                 new Date(ballot.opens_at);
 
-            const originalEnd =
+            originalEnd =
                 new Date(ballot.closes_at);
 
-            const formatDate =
-                function (date) {
 
-                    return date.toLocaleDateString(
-                        undefined,
-                        {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric"
-                        }
-                    );
+        // ------------------------------------------
+        // Ballot does not exist yet
+        // ------------------------------------------
 
-                };
-
-
-            // ------------------------------------------
-            // Get recirculation history
-            // ------------------------------------------
+        } else {
 
             const {
-                data: recirculations,
-                error: recirculationError
+                data: invitation,
+                error: invitationDateError
             } =
                 await supabaseClient
-                    .from("ballot_recirculations")
-                    .select(
-                        "previous_closes_at, new_closes_at"
-                    )
-                    .eq(
-                        "ballot_id",
-                        ballotId
-                    )
+                    .from("auth_guids")
+                    .select("created_at")
+                    .eq("ballot_id", ballotId)
                     .order(
                         "created_at",
                         {
                             ascending: true
                         }
-                    );
+                    )
+                    .limit(1)
+                    .maybeSingle();
 
 
-            if (recirculationError) {
+            if (invitationDateError) {
 
                 console.error(
-                    "Recirculation lookup error:",
-                    recirculationError
+                    "Invitation date lookup error:",
+                    invitationDateError
                 );
 
                 message.textContent =
-                    "Could not load recirculation dates.";
+                    "Could not determine ballot dates.";
 
                 return;
             }
 
 
-            // ------------------------------------------
-            // Original ballot dates
-            // ------------------------------------------
+            if (!invitation) {
 
-            if (recirculations &&
-                recirculations.length > 0) {
+                message.textContent =
+                    "Ballot information could not be found.";
 
-                // The original ballot ended when
-                // the first recirculation began.
-
-                const originalEndDate =
-                    new Date(
-                        recirculations[0]
-                            .previous_closes_at
-                    );
-
-                originalBallotDates.textContent =
-                    `${formatDate(originalStart)} – ${formatDate(originalEndDate)}`;
-
-
-                // ------------------------------------------
-                // Recirculation dates
-                // ------------------------------------------
-
-                const recirculationStart =
-                    new Date(
-                        recirculations[0]
-                            .previous_closes_at
-                    );
-
-                const lastRecirculation =
-                    recirculations[
-                        recirculations.length - 1
-                    ];
-
-                const recirculationEnd =
-                    new Date(
-                        lastRecirculation
-                            .new_closes_at
-                    );
-
-                recirculationDates.textContent =
-                    `${formatDate(recirculationStart)} – ${formatDate(recirculationEnd)}`;
-
-            } else {
-
-                // No recirculation has occurred.
-
-                originalBallotDates.textContent =
-                    `${formatDate(originalStart)} – ${formatDate(originalEnd)}`;
-
-                recirculationDates.textContent =
-                    "None";
-
+                return;
             }
+
+
+            originalStart =
+                new Date(
+                    invitation.created_at
+                );
+
+
+            originalEnd =
+                new Date(originalStart);
+
+            originalEnd.setDate(
+                originalEnd.getDate() + 14
+            );
+
+        }
+
+
+        // ------------------------------------------
+        // Get recirculation history
+        // ------------------------------------------
+
+        const {
+            data: recirculations,
+            error: recirculationError
+        } =
+            await supabaseClient
+                .from("ballot_recirculations")
+                .select(
+                    "previous_closes_at, new_closes_at"
+                )
+                .eq(
+                    "ballot_id",
+                    ballotId
+                )
+                .order(
+                    "created_at",
+                    {
+                        ascending: true
+                    }
+                );
+
+
+        if (recirculationError) {
+
+            console.error(
+                "Recirculation lookup error:",
+                recirculationError
+            );
+
+            message.textContent =
+                "Could not load recirculation dates.";
+
+            return;
+        }
+
+
+        // ------------------------------------------
+        // Display ballot dates
+        // ------------------------------------------
+
+        if (
+            recirculations &&
+            recirculations.length > 0
+        ) {
+
+            // Original ballot ended when
+            // the first recirculation began.
+
+            const originalEndDate =
+                new Date(
+                    recirculations[0]
+                        .previous_closes_at
+                );
+
+
+            originalBallotDates.textContent =
+                `${formatDate(originalStart)} – ${formatDate(originalEndDate)}`;
+
+
+            // Recirculation begins when
+            // the original ballot ended.
+
+            const recirculationStart =
+                new Date(
+                    recirculations[0]
+                        .previous_closes_at
+                );
+
+
+            const lastRecirculation =
+                recirculations[
+                    recirculations.length - 1
+                ];
+
+
+            const recirculationEnd =
+                new Date(
+                    lastRecirculation
+                        .new_closes_at
+                );
+
+
+            recirculationDates.textContent =
+                `${formatDate(recirculationStart)} – ${formatDate(recirculationEnd)}`;
 
 
         } else {
 
-            message.textContent =
-                "Ballot information could not be found.";
+            originalBallotDates.textContent =
+                `${formatDate(originalStart)} – ${formatDate(originalEnd)}`;
 
-            return;
+            recirculationDates.textContent =
+                "None";
+
         }
 
 
