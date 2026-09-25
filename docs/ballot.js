@@ -126,6 +126,39 @@ const invitationToken = params.get("invite");
 
 document.getElementById("ballotName").textContent =
 ballotId
+
+const { data: ballotDates, error: ballotDatesError } =
+    await supabaseClient
+        .from("ballots")
+        .select("closes_at")
+        .eq("id", ballotId)
+        .maybeSingle();
+
+if (!ballotDatesError && ballotDates) {
+
+    const closeDate =
+        new Date(ballotDates.closes_at);
+
+    const formattedCloseDate =
+        closeDate.toLocaleDateString(
+            undefined,
+            {
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            }
+        );
+
+    const endDateElement =
+        document.getElementById("ballotEndDate");
+
+    if (endDateElement) {
+        endDateElement.textContent =
+            `Voting ends: ${formattedCloseDate}`;
+    }
+}
+
+
 ? `Ballot: ${ballotId}`
 : "No ballot specified";
 
