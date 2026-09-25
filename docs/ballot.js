@@ -139,16 +139,16 @@ async function loadBallotEndDate() {
         return;
     }
 
+    // --------------------------------------------------
+    // First: see if the ballot record already exists
+    // --------------------------------------------------
+
     const { data: ballotDates, error: ballotDatesError } =
         await supabaseClient
             .from("ballots")
-            .select("closes_at")
+            .select("opens_at, closes_at")
             .eq("id", ballotId)
             .maybeSingle();
-
-    console.log("BALLOT ID:", ballotId);
-    console.log("BALLOT DATES:", ballotDates);
-    console.log("BALLOT DATE ERROR:", ballotDatesError);
 
     if (ballotDatesError) {
 
@@ -160,12 +160,65 @@ async function loadBallotEndDate() {
         return;
     }
 
-    if (!ballotDates) {
-        return;
+
+    // --------------------------------------------------
+    // If ballot exists, use its actual closing date
+    // --------------------------------------------------
+
+    let closeDate;
+
+    if (ballotDates) {
+
+        closeDate =
+            new Date(ballotDates.closes_at);
+
+    } else {
+
+        // --------------------------------------------------
+        // No ballot row yet.
+        // Use the earliest auth_guids timestamp.
+        // --------------------------------------------------
+
+        const { data: invitation, error: invitationError } =
+            await supabaseClient
+                .from("auth_guids")
+                .select("created_at")
+                .eq("ballot_id", ballotId)
+                .order("created_at", {
+                    ascending: true
+                })
+                .limit(1)
+                .maybeSingle();
+
+        if (invitationError) {
+
+            console.error(
+                "Invitation date lookup error:",
+                invitationError
+            );
+
+            return;
+        }
+
+        if (!invitation) {
+            return;
+        }
+
+        const startDate =
+            new Date(invitation.created_at);
+
+        closeDate =
+            new Date(startDate);
+
+        closeDate.setDate(
+            closeDate.getDate() + 14
+        );
     }
 
-    const closeDate =
-        new Date(ballotDates.closes_at);
+
+    // --------------------------------------------------
+    // Display closing date
+    // --------------------------------------------------
 
     const formattedCloseDate =
         closeDate.toLocaleDateString(
@@ -186,7 +239,6 @@ async function loadBallotEndDate() {
             `Voting ends: ${formattedCloseDate}`;
 
     }
-
 }
 
 loadBallotEndDate();
