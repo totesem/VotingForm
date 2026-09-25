@@ -146,6 +146,10 @@ async function loadBallotEndDate() {
             .eq("id", ballotId)
             .maybeSingle();
 
+    console.log("BALLOT ID:", ballotId);
+    console.log("BALLOT DATES:", ballotDates);
+    console.log("BALLOT DATE ERROR:", ballotDatesError);
+
     if (ballotDatesError) {
 
         console.error(
