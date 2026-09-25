@@ -123,18 +123,42 @@ document.getElementById("resultsLink").href =
 
 const invitationToken = params.get("invite");
 
-
 document.getElementById("ballotName").textContent =
-ballotId
+    ballotId
+    ? `Ballot: ${ballotId}`
+    : "No ballot specified";
 
-const { data: ballotDates, error: ballotDatesError } =
-    await supabaseClient
-        .from("ballots")
-        .select("closes_at")
-        .eq("id", ballotId)
-        .maybeSingle();
 
-if (!ballotDatesError && ballotDates) {
+// --------------------------------------------------
+// Load ballot end date
+// --------------------------------------------------
+
+async function loadBallotEndDate() {
+
+    if (!ballotId) {
+        return;
+    }
+
+    const { data: ballotDates, error: ballotDatesError } =
+        await supabaseClient
+            .from("ballots")
+            .select("closes_at")
+            .eq("id", ballotId)
+            .maybeSingle();
+
+    if (ballotDatesError) {
+
+        console.error(
+            "Ballot date lookup error:",
+            ballotDatesError
+        );
+
+        return;
+    }
+
+    if (!ballotDates) {
+        return;
+    }
 
     const closeDate =
         new Date(ballotDates.closes_at);
@@ -153,14 +177,15 @@ if (!ballotDatesError && ballotDates) {
         document.getElementById("ballotEndDate");
 
     if (endDateElement) {
+
         endDateElement.textContent =
             `Voting ends: ${formattedCloseDate}`;
+
     }
+
 }
 
-
-? `Ballot: ${ballotId}`
-: "No ballot specified";
+loadBallotEndDate();
 
 // --------------------------------------------------
 // Check authentication
